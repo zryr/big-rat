@@ -3,15 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Interactive Rat - Aggressive Levitation (No Shine)</title>
+    <title>Big Rat Monster: Modernized</title> <!-- UPDATED Page Title -->
+
+    <!-- Open Graph / Facebook / Discord Meta Tags -->
+    <meta property="og:title" content="Big Rat" />
+    <meta property="og:description" content="Now THAT'S a Rat!" />
+    <meta property="og:image" content="https://raw.githubusercontent.com/zryr/big-rat/32e48fdb45b16e8e6dfb6eccfdd0c45ba251671b/BigRat-Enhanced.png" /> <!-- UPDATED Embed Image URL -->
+    <meta property="og:url" content="https://zryr.github.io/big-rat/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Big Rat" />
+
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Big Rat" />
+    <meta name="twitter:description" content="Now THAT'S a Rat!" />
+    <meta name="twitter:image" content="https://raw.githubusercontent.com/zryr/big-rat/32e48fdb45b16e8e6dfb6eccfdd0c45ba251671b/BigRat-Enhanced.png" /> <!-- UPDATED Embed Image URL -->
+
+    <!-- Optional: Theme Color -->
+    <meta name="theme-color" content="#0A0A0A">
+
     <style>
         :root {
             --glow-color-base: rgba(120, 150, 220, 0.05);
             --glow-color-interactive: rgba(150, 180, 255, 0.1);
-            /* Shine variables removed */
             --image-border-color: rgba(200, 220, 255, 0.3);
             --focus-outline-color: #79A1D9;
-            --levitation-distance: 10px; /* More aggressive levitation */
+            --levitation-distance: 10px;
         }
 
         body { margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; perspective: 1200px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -41,11 +58,9 @@
             transform-style: preserve-3d; will-change: transform, box-shadow;
         }
         #ratImage.is-levitating {
-            animation: levitateIdle 2s ease-in-out infinite alternate; /* More aggressive: 10px distance, 2s duration */
+            animation: levitateIdle 2s ease-in-out infinite alternate;
         }
         @keyframes levitateIdle {
-            /* This version of levitateIdle was problematic with JS transform override.
-               We ensure JS sets the full transform string during interaction. */
             0% { transform: translateY(calc(var(--levitation-distance) * -1)) scale(1) rotateX(0deg) rotateY(0deg); }
             100% { transform: translateY(var(--levitation-distance)) scale(1) rotateX(0deg) rotateY(0deg); }
         }
@@ -54,15 +69,12 @@
                          0 0 70px 22px var(--glow-color-interactive), inset 0 0 1px 1px var(--image-border-color);
         }
         
-        /* Shine Overlay CSS Removed */
-
         @media (prefers-reduced-motion: reduce) {
             #starryBackground, #stars1, #stars2, #stars3 { animation: none !important; }
             #introText { animation: none !important; }
             .image-wrapper, .image-wrapper.visible { animation: none !important; opacity: 1 !important; transform: scale(1) rotateZ(0deg) translateY(0px) !important; visibility: visible !important; }
             #ratImage { transition: none !important; animation: none !important; box-shadow: 0 0 15px 5px var(--glow-color-base), 0 0 30px 10px var(--glow-color-base), inset 0 0 1px 1px var(--image-border-color); }
             #ratImage.is-levitating { animation: none !important; }
-            /* Shine CSS was removed */
         }
     </style>
 </head>
@@ -70,32 +82,27 @@
     <div id="starryBackground"><div id="stars1"></div><div id="stars2"></div><div id="stars3"></div></div>
     <div id="introScreen"><div id="introText">Tap Here</div><div id="introSubText">(to start the experience)</div></div>
     <div class="image-wrapper" tabindex="0">
-        <img src="https://bigrat.monster/media/bigrat.jpg" alt="fluffy rat :D" id="ratImage">
-        <!-- Shine Overlay div removed -->
+        <!-- UPDATED Main Image URL -->
+        <img src="https://raw.githubusercontent.com/zryr/big-rat/32e48fdb45b16e8e6dfb6eccfdd0c45ba251671b/BigRat-HDR.jpg" alt="A large, fluffy rat looking towards the camera." id="ratImage">
     </div>
 
-    <!-- Audio elements: Make sure the src paths are correct relative to your HTML file -->
-    <audio id="bgMusic" loop><source src="sounds/background-music.mp3" type="audio/mpeg"></audio> <!-- ASSUMING .mp3, adjust if different -->
-    <audio id="tapSfx"><source src="sounds/tap-sfx.mp3" type="audio/mpeg"></audio> <!-- ASSUMING .mp3, adjust if different -->
-
+    <audio id="bgMusic" loop><source src="sounds/background-music.mp3" type="audio/mpeg"></audio>
+    <audio id="tapSfx"><source src="sounds/tap-sfx.mp3" type="audio/mpeg"></audio>
 
     <script>
         const TILT_MAX_ROTATION = 18;
         const TILT_RETURN_SPEED_MS = 300;
-        const TILT_SCALE_EFFECT = 1.04; // Scale effect during tilt
+        const TILT_SCALE_EFFECT = 1.04;
         const MOUSE_MOVE_THROTTLE_MS = 10;
-        const IDLE_TIMEOUT = 2000; // 2 seconds for levitation to start
+        const IDLE_TIMEOUT = 2000;
         const Y_AXIS_SENSITIVITY_BOOST = 1.1;
-
 
         const introScreen = document.getElementById('introScreen');
         const introText = document.getElementById('introText');
         const imageWrapper = document.querySelector('.image-wrapper');
         const ratImage = document.getElementById('ratImage');
-        // shineOverlay variable removed
-        const bgMusic = document.getElementById('bgMusic'); // Added for intro music
-        const tapSfx = document.getElementById('tapSfx');   // Added for tap sound
-
+        const bgMusic = document.getElementById('bgMusic'); 
+        const tapSfx = document.getElementById('tapSfx');   
         
         let prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         let experienceStarted = false;
@@ -124,7 +131,6 @@
                     imageWrapper.style.opacity = '1'; imageWrapper.style.transform = 'scale(1)';
                 } else {
                     resetIdleTimer(); 
-                    // Attempt to play music after user interaction (clicking intro)
                     bgMusic.play().catch(e => console.warn("Background music autoplay failed:", e));
                 }
                 introScreen.style.display = 'none';
@@ -135,7 +141,6 @@
             if (experienceStarted) return;
             experienceStarted = true;
             introText.classList.add('popped');
-            // Play tap SFX for intro click
             if (!prefersReducedMotion) {
                 tapSfx.currentTime = 0;
                 tapSfx.play().catch(e => console.warn("Intro tap SFX failed:", e));
@@ -152,28 +157,22 @@
             if (!experienceStarted) return;
             stopLevitation(); 
             clearTimeout(idleTimer); 
-            imageWrapper.classList.add('is-interacting'); // For interactive glow
+            imageWrapper.classList.add('is-interacting');
             ratImage.style.transition = `transform 0.05s linear, box-shadow 0.2s ease-out`; 
-            
-            // Play tap SFX for image interaction start (if touch)
             if (event.type === 'touchstart' && !prefersReducedMotion) {
                  tapSfx.currentTime = 0;
                  tapSfx.play().catch(e => console.warn("Image tap SFX failed:", e));
             }
-
             if (prefersReducedMotion && event.type !== 'touchstart') return;
             if (event.type === 'keydown' && (event.key === 'Enter' || event.key === ' ')) {
-                 // Ensure transform is reset from levitation before applying new scale for keyboard
                 ratImage.style.transform = `rotateX(0deg) rotateY(0deg) scale(${TILT_SCALE_EFFECT * 0.98})`;
             }
         }
 
         const throttledHandleInteractionMove = throttle(function handleInteractionMove(event) {
             if (!experienceStarted || !imageWrapper.classList.contains('is-interacting')) return;
-            
             if (prefersReducedMotion) {
                  ratImage.style.transform = `rotateX(0deg) rotateY(0deg) scale(${TILT_SCALE_EFFECT * 0.99})`;
-                 // No shine to set opacity for
                  return;
             }
             const rect = imageWrapper.getBoundingClientRect();
@@ -187,13 +186,9 @@
             const x = clientX - rect.left, y = clientY - rect.top;
             const centerX = rect.width / 2, centerY = rect.height / 2;
             const deltaX = x - centerX, deltaY = y - centerY;
-            
             const rotateX = (deltaY / centerY) * TILT_MAX_ROTATION * Y_AXIS_SENSITIVITY_BOOST; 
             const rotateY = (deltaX / centerX) * TILT_MAX_ROTATION;
-            
             ratImage.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(${TILT_SCALE_EFFECT})`;
-            
-            // Shine logic removed
         }, MOUSE_MOVE_THROTTLE_MS);
 
         function handleInteractionEnd() {
@@ -207,7 +202,6 @@
                 ratImage.style.transform = 'rotateX(0deg) rotateY(0deg) scale(1)';
                 resetIdleTimer(); 
             }
-            // Shine logic removed
         }
         
         window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', (e) => { prefersReducedMotion = e.matches; stopLevitation(); clearTimeout(idleTimer); if (prefersReducedMotion) { handleInteractionEnd(); if (experienceStarted) { imageWrapper.style.animation = 'none'; imageWrapper.style.opacity = '1'; imageWrapper.style.transform = 'scale(1) rotateZ(0deg) translateY(0px)'; } else { introText.style.animation = 'none'; } ratImage.style.animation = 'none'; } else { if (experienceStarted) { imageWrapper.style.animation = ''; resetIdleTimer(); } else { introText.style.animation = ''; } } });
@@ -225,4 +219,4 @@
         imageWrapper.addEventListener('keydown', (e) => { if (!experienceStarted) return; if (e.key === 'Enter' || e.key === ' ') { handleInteractionStart(e); setTimeout(handleInteractionEnd, 300); }});
     </script>
 </body>
-</html> 
+</html>
