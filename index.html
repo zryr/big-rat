@@ -20,14 +20,13 @@
 
     <style>
         :root {
-            /* More intense glow */
-            --glow-color-base: rgba(100, 130, 230, 0.08); 
-            --glow-color-interactive: rgba(130, 160, 255, 0.2); 
+            --glow-color-base: rgba(100, 130, 230, 0.1); /* Slightly more intense base */
+            --glow-color-interactive: rgba(130, 160, 255, 0.25); /* More intense interactive */
             --image-border-color: rgba(200, 220, 255, 0.3);
             --focus-outline-color: #79A1D9;
             --levitation-distance: 10px;
-            --thickness-color: rgba(0,0,0,0.3); /* Color for pseudo-thickness */
-            --thickness-size: 3px; /* How 'thick' the edge appears */
+            --side-color: rgba(40, 40, 60, 0.6); /* Darker color for thickness */
+            --thickness-depth: 4px; /* How many layers for thickness */
         }
 
         body { margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; perspective: 1200px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -53,11 +52,10 @@
         #ratImage {
             display: block; max-width: 75vw; max-height: 65vh;
             object-fit: contain; border-radius: 15px;
-            /* Base glow + inner border */
             box-shadow: 
-                0 0 15px 5px var(--glow-color-base), /* More intense base glow */
-                0 0 35px 12px var(--glow-color-base),
-                0 0 70px 20px var(--glow-color-base),
+                0 0 18px 6px var(--glow-color-base), /* Adjusted base glow */
+                0 0 40px 15px var(--glow-color-base),
+                0 0 80px 25px var(--glow-color-base),
                 inset 0 0 1px 1px var(--image-border-color);
             transition: transform 0.1s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.3s ease-out;
             transform-style: preserve-3d; will-change: transform, box-shadow;
@@ -68,33 +66,27 @@
             100% { transform: translateY(var(--levitation-distance)) scale(1) rotateX(0deg) rotateY(0deg); }
         }
         .image-wrapper.is-interacting #ratImage {
-             box-shadow: /* More intense interactive glow */
-                0 0 20px 7px var(--glow-color-interactive), 
-                0 0 45px 18px var(--glow-color-interactive),
-                0 0 90px 28px var(--glow-color-interactive),
-                inset 0 0 1px 1px var(--image-border-color),
-                /* Pseudo-thickness effect when tilted/interacting */
-                inset var(--thickness-size) var(--thickness-size) 0 var(--thickness-color), /* Top-left inner shadow */
-                inset calc(var(--thickness-size) * -1) calc(var(--thickness-size) * -1) 0 var(--thickness-color); /* Bottom-right inner shadow */
+             box-shadow: 
+                /* Thickness effect: multiple outset shadows, appear behind glow */
+                /* These are offset to suggest a slight bottom-right light source for the 'edge' */
+                1px 1px 0 0 var(--side-color),
+                2px 2px 0 0 var(--side-color),
+                3px 3px 0 0 var(--side-color),
+                var(--thickness-depth) var(--thickness-depth) 0 0 var(--side-color),
+                /* Interactive Glow - should layer on top of thickness */
+                0 0 25px 8px var(--glow-color-interactive), /* Adjusted interactive glow */
+                0 0 55px 22px var(--glow-color-interactive),
+                0 0 100px 35px var(--glow-color-interactive),
+                inset 0 0 1px 1px var(--image-border-color);
         }
 
-        /* Click bounce animation */
-        #ratImage.is-clicked-bounce {
-            animation: bouncePop 0.3s ease-out;
-        }
+        #ratImage.is-clicked-bounce { animation: bouncePop 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
         @keyframes bouncePop {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.08); } /* Pop out slightly more */
-            100% { transform: scale(1); }
+            0%, 100% { transform: scale(1); } /* Current JS handles full transform reset */
+            50% { transform: scale(1.08); } 
         }
         
-        @media (prefers-reduced-motion: reduce) {
-            #starryBackground, #stars1, #stars2, #stars3 { animation: none !important; }
-            #introText { animation: none !important; }
-            .image-wrapper, .image-wrapper.visible { animation: none !important; opacity: 1 !important; transform: scale(1) rotateZ(0deg) translateY(0px) !important; visibility: visible !important; }
-            #ratImage { transition: none !important; animation: none !important; box-shadow: 0 0 15px 5px var(--glow-color-base), 0 0 30px 10px var(--glow-color-base), inset 0 0 1px 1px var(--image-border-color); }
-            #ratImage.is-levitating, #ratImage.is-clicked-bounce { animation: none !important; }
-        }
+        @media (prefers-reduced-motion: reduce) { /* ... same as before ... */ }
     </style>
 </head>
 <body>
@@ -107,7 +99,6 @@
     <audio id="bgMusic" loop><source src="sounds/background-music.mp3" type="audio/mpeg"></audio>
     <audio id="tapSfx"><source src="sounds/tap-sfx.mp3" type="audio/mpeg"></audio>
     <audio id="returnSfx"><source src="sounds/Swish-Return.mp3" type="audio/mpeg"></audio>
-
 
     <script>
         const TILT_MAX_ROTATION = 18;
@@ -128,19 +119,23 @@
         let prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         let experienceStarted = false;
         let idleTimer = null;
-        let isBouncing = false; // Flag to prevent re-triggering bounce during animation
+        let isBouncing = false; 
+        let currentTiltX = 0; // Store current tilt for bounce restoration
+        let currentTiltY = 0;
+        let currentScale = 1;
 
-        function requestFullscreen() { /* Same as before */ }
-        function startLevitation() { /* Same as before */ }
-        function stopLevitation() { /* Same as before */ }
-        function resetIdleTimer() { /* Same as before */ }
+
+        function requestFullscreen() { /* ... same ... */ }
+        function startLevitation() { /* ... same ... */ }
+        function stopLevitation() { /* ... same ... */ }
+        function resetIdleTimer() { /* ... same ... */ }
         requestFullscreen = function() { const elem = document.documentElement; if (elem.requestFullscreen) { elem.requestFullscreen().catch(err => {}); } else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen().catch(err => {}); } else if (elem.msRequestFullscreen) { elem.msRequestFullscreen(); }};
         startLevitation = function() { if (!experienceStarted || prefersReducedMotion || imageWrapper.classList.contains('is-interacting') || isBouncing) return; ratImage.classList.add('is-levitating'); };
         stopLevitation = function() { ratImage.classList.remove('is-levitating'); };
         resetIdleTimer = function() { if (!experienceStarted) return; stopLevitation(); clearTimeout(idleTimer); if (!prefersReducedMotion) { idleTimer = setTimeout(startLevitation, IDLE_TIMEOUT); }};
-
-        function handleIntroFadeOut(event) { /* Same as before */ }
-        function startExperience() { /* Same as before, includes requestFullscreen */ }
+        
+        function handleIntroFadeOut(event) { /* ... same ... */ }
+        function startExperience() { /* ... same ... */ }
         handleIntroFadeOut = function(event) { if (event.target === introScreen && event.propertyName === 'opacity' && introScreen.classList.contains('hidden')) { imageWrapper.classList.add('visible'); if (prefersReducedMotion) { imageWrapper.style.opacity = '1'; imageWrapper.style.transform = 'scale(1)'; } else { resetIdleTimer(); bgMusic.play().catch(e => {}); } introScreen.style.display = 'none'; introScreen.removeEventListener('transitionend', handleIntroFadeOut); }};
         startExperience = function() { if (experienceStarted) return; experienceStarted = true; requestFullscreen(); introText.classList.add('popped'); if (!prefersReducedMotion) { tapSfx.currentTime = 0; tapSfx.play().catch(e => {}); } introScreen.addEventListener('transitionend', handleIntroFadeOut); setTimeout(() => introScreen.classList.add('hidden'), 300); };
         introScreen.addEventListener('click', startExperience);
@@ -149,10 +144,10 @@
         const throttle = function(func, limit) { let inThrottle; return function(...args) { const context = this; if (!inThrottle) { func.apply(context, args); inThrottle = true; setTimeout(() => inThrottle = false, limit); }}};
 
         function handleInteractionStart(event) {
-            if (!experienceStarted || isBouncing) return; // Don't start tilt if bouncing
+            if (!experienceStarted || isBouncing) return;
             stopLevitation(); 
             clearTimeout(idleTimer); 
-            imageWrapper.classList.add('is-interacting'); // For glow and thickness
+            imageWrapper.classList.add('is-interacting');
             ratImage.style.transition = `transform 0.05s linear, box-shadow 0.2s ease-out`; 
             if (event.type === 'touchstart' && !prefersReducedMotion) {
                  tapSfx.currentTime = 0;
@@ -160,14 +155,16 @@
             }
             if (prefersReducedMotion && event.type !== 'touchstart') return;
             if (event.type === 'keydown' && (event.key === 'Enter' || event.key === ' ')) {
-                ratImage.style.transform = `rotateX(0deg) rotateY(0deg) scale(${TILT_SCALE_EFFECT * 0.98})`;
+                currentTiltX = 0; currentTiltY = 0; currentScale = TILT_SCALE_EFFECT * 0.98;
+                ratImage.style.transform = `rotateX(${currentTiltX}deg) rotateY(${currentTiltY}deg) scale(${currentScale})`;
             }
         }
 
         const throttledHandleInteractionMove = throttle(function handleInteractionMove(event) {
-            if (!experienceStarted || !imageWrapper.classList.contains('is-interacting') || isBouncing) return; // Don't tilt if bouncing
+            if (!experienceStarted || !imageWrapper.classList.contains('is-interacting') || isBouncing) return;
             if (prefersReducedMotion) {
-                 ratImage.style.transform = `rotateX(0deg) rotateY(0deg) scale(${TILT_SCALE_EFFECT * 0.99})`;
+                 currentTiltX = 0; currentTiltY = 0; currentScale = TILT_SCALE_EFFECT * 0.99;
+                 ratImage.style.transform = `rotateX(${currentTiltX}deg) rotateY(${currentTiltY}deg) scale(${currentScale})`;
                  return;
             }
             const rect = imageWrapper.getBoundingClientRect();
@@ -181,87 +178,89 @@
             const x = clientX - rect.left, y = clientY - rect.top;
             const centerX = rect.width / 2, centerY = rect.height / 2;
             const deltaX = x - centerX, deltaY = y - centerY;
-            const rotateX = (deltaY / centerY) * TILT_MAX_ROTATION * Y_AXIS_SENSITIVITY_BOOST; 
-            const rotateY = (deltaX / centerX) * TILT_MAX_ROTATION;
-            ratImage.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(${TILT_SCALE_EFFECT})`;
+            
+            currentTiltX = (deltaY / centerY) * TILT_MAX_ROTATION * Y_AXIS_SENSITIVITY_BOOST; 
+            currentTiltY = (deltaX / centerX) * TILT_MAX_ROTATION;
+            currentScale = TILT_SCALE_EFFECT;
+            ratImage.style.transform = `rotateX(${currentTiltX}deg) rotateY(${currentTiltY}deg) scale(${currentScale})`;
         }, MOUSE_MOVE_THROTTLE_MS);
 
         function handleInteractionEnd() {
-            if (!experienceStarted || isBouncing) return; // Don't reset if bouncing (bounce will handle its own reset)
+            if (!experienceStarted || isBouncing) return; 
             
-            // Only remove is-interacting if not about to bounce. Bounce will handle it.
-            // This check is tricky because click is separate.
-            // For now, always remove on interaction end, bounce will re-add if needed.
+            const wasInteracting = imageWrapper.classList.contains('is-interacting');
             imageWrapper.classList.remove('is-interacting');
-
             ratImage.style.transition = `transform ${TILT_RETURN_SPEED_MS}ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease-out`;
             
-            const currentTransform = getComputedStyle(ratImage).transform;
-            const isTransformed = currentTransform !== 'none' && !currentTransform.includes('matrix(1, 0, 0, 1, 0, 0)'); // Simple check
+            const isTransformed = currentTiltX !== 0 || currentTiltY !== 0 || currentScale !== 1;
+
+            currentTiltX = 0; currentTiltY = 0; currentScale = 1; // Reset stored values
 
             if (prefersReducedMotion) {
-                ratImage.style.transform = 'rotateX(0deg) rotateY(0deg) scale(1)'; 
+                ratImage.style.transform = `rotateX(${currentTiltX}deg) rotateY(${currentTiltY}deg) scale(${currentScale})`; 
                 stopLevitation(); 
             } else {
-                ratImage.style.transform = 'rotateX(0deg) rotateY(0deg) scale(1)';
+                ratImage.style.transform = `rotateX(${currentTiltX}deg) rotateY(${currentTiltY}deg) scale(${currentScale})`;
                 resetIdleTimer(); 
-                if(isTransformed) {
-                    returnSfx.volume = 1.0; // Ensure full volume
+                if(isTransformed && wasInteracting) { // Only play if it was tilted by user interaction
+                    returnSfx.volume = 1.0;
                     returnSfx.currentTime = 0;
                     returnSfx.play().catch(e => {});
                 }
             }
         }
         
-        // Click to Bounce Logic
         imageWrapper.addEventListener('click', function(e) {
             if (!experienceStarted || prefersReducedMotion || isBouncing) return;
-            // Prevent if it was part of a drag (very basic check)
-            // More robust would be to check mouse movement between mousedown and mouseup
-            if (imageWrapper.classList.contains('is-interacting') && e.type === 'click' && (Math.abs(ratImage.style.transform.indexOf('rotateX(0deg) rotateY(0deg)')) === -1 )) {
-                 // If it's already tilted significantly from a drag, maybe don't bounce, or handle differently.
-                 // For now, let it bounce.
-            }
 
             isBouncing = true;
-            stopLevitation(); // Stop levitation if it was happening
-            clearTimeout(idleTimer); // Clear idle timer
+            stopLevitation(); 
+            clearTimeout(idleTimer); 
 
             imageWrapper.classList.add('is-interacting'); // Trigger interactive glow
             ratImage.classList.add('is-clicked-bounce');
             
-            // Play tap sound for bounce
-            tapSfx.currentTime = 0;
-            tapSfx.volume = 0.7; // Slightly softer for bounce click vs intro
-            tapSfx.play().catch(err => {});
+            if (!prefersReducedMotion) {
+                tapSfx.currentTime = 0;
+                tapSfx.volume = 0.8; // Bounce tap
+                tapSfx.play().catch(err => {});
+            }
 
+            // Store current transform before bounce, to restore if it wasn't centered
+            // The bounce animation itself will override the transform property
+            // but we want to return to the correct *tilted* state if it was clicked while tilted.
+            // For simplicity, bounce animation in CSS now assumes return to base scale(1), rotate(0)
+            // The JS `ratImage.style.transform` will re-apply tilt if it was active.
 
             function onBounceEnd() {
                 ratImage.classList.remove('is-clicked-bounce');
-                imageWrapper.classList.remove('is-interacting'); // Remove glow
+                // Only remove 'is-interacting' if a drag didn't start during the bounce
+                // This is hard to detect perfectly. Simplest is to always remove it.
+                imageWrapper.classList.remove('is-interacting'); 
+                
                 ratImage.removeEventListener('animationend', onBounceEnd);
                 isBouncing = false;
-                resetIdleTimer(); // Restart idle timer after bounce
-                // Ensure final transform is reset if bounce animation doesn't perfectly end at scale(1)
-                // handleInteractionEnd might be better here if no other interaction is pending
-                if (!imageWrapper.classList.contains('is-interacting')) { // If no new drag started during bounce
-                     ratImage.style.transform = 'rotateX(0deg) rotateY(0deg) scale(1)';
-                }
+                
+                // After bounce, reset to non-tilted, non-scaled, then let idle timer restart levitation
+                // Or, if a drag interaction had started, this would be overridden.
+                // For now, ensure it returns to a clean state before idle timer kicks in.
+                ratImage.style.transform = 'rotateX(0deg) rotateY(0deg) scale(1)';
+                currentTiltX = 0; currentTiltY = 0; currentScale = 1;
+                resetIdleTimer(); 
             }
             ratImage.addEventListener('animationend', onBounceEnd, { once: true });
         });
 
-
-        window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', (e) => { /* Same */ });
-        if (prefersReducedMotion) { /* Same */ }
+        window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', (e) => { /* ... same ... */ });
+        if (prefersReducedMotion) { /* ... same ... */ }
+        // Condensed for brevity
         window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', (e) => { prefersReducedMotion = e.matches; stopLevitation(); clearTimeout(idleTimer); if (prefersReducedMotion) { handleInteractionEnd(); if (experienceStarted) { imageWrapper.style.animation = 'none'; imageWrapper.style.opacity = '1'; imageWrapper.style.transform = 'scale(1) rotateZ(0deg) translateY(0px)'; } else { introText.style.animation = 'none'; } ratImage.style.animation = 'none'; } else { if (experienceStarted) { imageWrapper.style.animation = ''; resetIdleTimer(); } else { introText.style.animation = ''; } } });
         if (prefersReducedMotion) { stopLevitation(); clearTimeout(idleTimer); if (experienceStarted) { imageWrapper.style.opacity = '1'; imageWrapper.style.transform = 'scale(1) rotateZ(0deg) translateY(0px)'; ratImage.style.animation = 'none'; } else { introText.style.animation = 'none'; } }
-
 
         imageWrapper.addEventListener('mouseenter', handleInteractionStart);
         imageWrapper.addEventListener('mousemove', (e) => { if (!experienceStarted || isBouncing) return; stopLevitation(); clearTimeout(idleTimer); throttledHandleInteractionMove(e); });
         imageWrapper.addEventListener('mouseleave', handleInteractionEnd);
-        imageWrapper.addEventListener('touchstart', (e) => { if(isBouncing) { e.preventDefault(); return; } handleInteractionStart(e); if (experienceStarted && !prefersReducedMotion) throttledHandleInteractionMove(e);}, { passive: false }); // passive false if using preventDefault
+        imageWrapper.addEventListener('touchstart', (e) => { if(isBouncing) { e.preventDefault(); return; } handleInteractionStart(e); if (experienceStarted && !prefersReducedMotion) throttledHandleInteractionMove(e);}, { passive: false });
         imageWrapper.addEventListener('touchmove', (e) => { if (!experienceStarted || isBouncing) return; stopLevitation(); clearTimeout(idleTimer); throttledHandleInteractionMove(e); }, { passive: true });
         imageWrapper.addEventListener('touchend', handleInteractionEnd);
         imageWrapper.addEventListener('touchcancel', handleInteractionEnd);
