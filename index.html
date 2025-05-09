@@ -3,86 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Big Rat</title> <!-- UPDATED Page Title -->
+    <title>Big Rat</title>
 
-    <!-- Open Graph / Facebook / Discord Meta Tags -->
-    <meta property="og:title" content="Big Rat" /> <!-- UPDATED -->
-    <meta property="og:description" content="Now THAT'S a Rat!" /> <!-- UPDATED -->
+    <meta property="og:title" content="Big Rat" />
+    <meta property="og:description" content="Now THAT'S a Rat!" />
     <meta property="og:image" content="https://raw.githubusercontent.com/zryr/big-rat/32e48fdb45b16e8e6dfb6eccfdd0c45ba251671b/BigRat-Enhanced.png" />
     <meta property="og:url" content="https://zryr.github.io/big-rat/" />
     <meta property="og:type" content="website" />
-    <!-- og:site_name removed -->
 
-    <!-- Twitter Card Meta Tags -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Big Rat" /> <!-- UPDATED -->
-    <meta name="twitter:description" content="Now THAT'S a Rat!" /> <!-- UPDATED -->
+    <meta name="twitter:title" content="Big Rat" />
+    <meta name="twitter:description" content="Now THAT'S a Rat!" />
     <meta name="twitter:image" content="https://raw.githubusercontent.com/zryr/big-rat/32e48fdb45b16e8e6dfb6eccfdd0c45ba251671b/BigRat-Enhanced.png" />
 
-    <meta name="theme-color" content="#000000"> <!-- Darker theme color -->
+    <meta name="theme-color" content="#000000">
 
     <style>
         :root {
-            --glow-color-base: rgba(120, 150, 220, 0.05);
-            --glow-color-interactive: rgba(150, 180, 255, 0.1);
+            /* More intense glow */
+            --glow-color-base: rgba(100, 130, 230, 0.08); 
+            --glow-color-interactive: rgba(130, 160, 255, 0.2); 
             --image-border-color: rgba(200, 220, 255, 0.3);
             --focus-outline-color: #79A1D9;
             --levitation-distance: 10px;
+            --thickness-color: rgba(0,0,0,0.3); /* Color for pseudo-thickness */
+            --thickness-size: 3px; /* How 'thick' the edge appears */
         }
 
         body { margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; perspective: 1200px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        #starryBackground { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background-color: #000000; /* Darker background */ }
+        #starryBackground { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background-color: #000000; }
         #stars1, #stars2, #stars3 { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-repeat: repeat; }
-        
-        #stars1 {
-            background-image: 
-                radial-gradient(1px 1px at 20% 30%, rgba(230,230,255,0.95), transparent), /* Brighter */
-                radial-gradient(2px 2px at 80% 10%, rgba(220,220,255,0.9), transparent), /* Brighter */
-                radial-gradient(1px 1px at 50% 70%, rgba(240,240,255,1), transparent),   /* Brighter */
-                radial-gradient(2px 2px at 10% 90%, rgba(225,225,255,0.85), transparent),/* Brighter */
-                radial-gradient(1px 1px at 90% 50%, rgba(230,230,255,0.95), transparent), /* Brighter */
-                radial-gradient(1px 1px at 35% 5%, rgba(240,240,255,0.9), transparent);  /* New Star */
-            background-size: 350px 350px; /* Slightly smaller for more density */
-            animation: animStar 50s linear infinite;
-        }
-        #stars2 {
-            background-image: 
-                radial-gradient(2px 2px at 30% 60%, rgba(200,200,230,0.75), transparent),/* Brighter */
-                radial-gradient(3px 3px at 70% 40%, rgba(210,210,240,0.8), transparent), /* Brighter */
-                radial-gradient(1px 1px at 5% 5%, rgba(220,220,250,0.9), transparent),    /* Brighter */
-                radial-gradient(2px 2px at 60% 85%, rgba(190,190,220,0.7), transparent), /* Brighter */
-                radial-gradient(3px 3px at 95% 15%, rgba(200,200,230,0.75), transparent),/* Brighter */
-                radial-gradient(2px 2px at 45% 45%, rgba(230,230,255,0.8), transparent); /* New Star */
-            background-size: 500px 500px; /* Slightly smaller for more density */
-            animation: animStar 75s linear infinite reverse;
-        }
-        #stars3 {
-            background-image: 
-                radial-gradient(1px 1px at 15% 75%, rgba(240,240,255,1), transparent),   /* Brighter */
-                radial-gradient(2px 2px at 85% 25%, rgba(225,225,255,0.9), transparent), /* Brighter */
-                radial-gradient(1px 1px at 55% 60%, rgba(230,230,255,0.95), transparent);/* New Star */
-            background-size: 700px 700px; /* Slightly smaller for more density */
-            animation: animStar 100s linear infinite;
-        }
+        #stars1 { background-image: radial-gradient(1px 1px at 20% 30%, rgba(230,230,255,0.95), transparent), radial-gradient(2px 2px at 80% 10%, rgba(220,220,255,0.9), transparent), radial-gradient(1px 1px at 50% 70%, rgba(240,240,255,1), transparent), radial-gradient(2px 2px at 10% 90%, rgba(225,225,255,0.85), transparent), radial-gradient(1px 1px at 90% 50%, rgba(230,230,255,0.95), transparent), radial-gradient(1px 1px at 35% 5%, rgba(240,240,255,0.9), transparent); background-size: 350px 350px; animation: animStar 50s linear infinite; }
+        #stars2 { background-image: radial-gradient(2px 2px at 30% 60%, rgba(200,200,230,0.75), transparent), radial-gradient(3px 3px at 70% 40%, rgba(210,210,240,0.8), transparent), radial-gradient(1px 1px at 5% 5%, rgba(220,220,250,0.9), transparent), radial-gradient(2px 2px at 60% 85%, rgba(190,190,220,0.7), transparent), radial-gradient(3px 3px at 95% 15%, rgba(200,200,230,0.75), transparent), radial-gradient(2px 2px at 45% 45%, rgba(230,230,255,0.8), transparent); background-size: 500px 500px; animation: animStar 75s linear infinite reverse; }
+        #stars3 { background-image: radial-gradient(1px 1px at 15% 75%, rgba(240,240,255,1), transparent), radial-gradient(2px 2px at 85% 25%, rgba(225,225,255,0.9), transparent), radial-gradient(1px 1px at 55% 60%, rgba(230,230,255,0.95), transparent); background-size: 700px 700px; animation: animStar 100s linear infinite; }
         @keyframes animStar { from { background-position: 0 0; } to { background-position: -10000px 5000px; } }
         
         #introScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 200; cursor: pointer; transition: opacity 0.5s ease-out, transform 0.5s ease-out; opacity: 1; }
         #introScreen.hidden { opacity: 0; pointer-events: none; transform: scale(1.1); }
-        #introText { /* "The Big Rat Experience" */
-            font-size: clamp(2.2rem, 6vw, 3.8rem); color: #fff; padding: 20px 40px;
-            border-radius: 10px; text-align: center;
-            animation: pulseTextGlowIntro 1.8s infinite ease-in-out; /* More intense pulse */
-            transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-            will-change: text-shadow, transform;
-        }
-        #introText.popped { transform: scale(1.2); animation: none; text-shadow: 0 0 20px #fff, 0 0 40px #fff, 0 0 60px #ffeeaa; } /* More intense pop */
-        @keyframes pulseTextGlowIntro { /* More intense glow */
-            0%, 100% { text-shadow: 0 0 8px #fff, 0 0 18px #fff, 0 0 28px #ccc; }
-            50% { text-shadow: 0 0 15px #fff, 0 0 30px #fff, 0 0 45px #eee; }
-        }
-        #introSubText { /* "Tap Here to Begin" */
-            font-size: clamp(1rem, 2.5vw, 1.2rem); color: #bbb; margin-top: 15px;
-        }
+        #introText { font-size: clamp(2.2rem, 6vw, 3.8rem); color: #fff; padding: 20px 40px; border-radius: 10px; text-align: center; animation: pulseTextGlowIntro 1.8s infinite ease-in-out; transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55); will-change: text-shadow, transform; }
+        #introText.popped { transform: scale(1.2); animation: none; text-shadow: 0 0 20px #fff, 0 0 40px #fff, 0 0 60px #ffeeaa; }
+        @keyframes pulseTextGlowIntro { 0%, 100% { text-shadow: 0 0 8px #fff, 0 0 18px #fff, 0 0 28px #ccc; } 50% { text-shadow: 0 0 15px #fff, 0 0 30px #fff, 0 0 45px #eee; } }
+        #introSubText { font-size: clamp(1rem, 2.5vw, 1.2rem); color: #bbb; margin-top: 15px; }
 
         .image-wrapper { position: relative; cursor: grab; opacity: 0; transform: scale(0.5) rotateZ(-15deg) translateY(20px); transition: opacity 0.5s, transform 0.5s; outline: none; -webkit-tap-highlight-color: transparent; visibility: hidden; }
         .image-wrapper.visible { visibility: visible; opacity: 0; animation: popIn 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards; animation-delay: 0s; }
@@ -92,8 +53,12 @@
         #ratImage {
             display: block; max-width: 75vw; max-height: 65vh;
             object-fit: contain; border-radius: 15px;
-            box-shadow: 0 0 10px 3px var(--glow-color-base), 0 0 25px 8px var(--glow-color-base),
-                        0 0 50px 15px var(--glow-color-base), inset 0 0 1px 1px var(--image-border-color);
+            /* Base glow + inner border */
+            box-shadow: 
+                0 0 15px 5px var(--glow-color-base), /* More intense base glow */
+                0 0 35px 12px var(--glow-color-base),
+                0 0 70px 20px var(--glow-color-base),
+                inset 0 0 1px 1px var(--image-border-color);
             transition: transform 0.1s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.3s ease-out;
             transform-style: preserve-3d; will-change: transform, box-shadow;
         }
@@ -103,8 +68,24 @@
             100% { transform: translateY(var(--levitation-distance)) scale(1) rotateX(0deg) rotateY(0deg); }
         }
         .image-wrapper.is-interacting #ratImage {
-             box-shadow: 0 0 15px 5px var(--glow-color-interactive), 0 0 35px 12px var(--glow-color-interactive),
-                         0 0 70px 22px var(--glow-color-interactive), inset 0 0 1px 1px var(--image-border-color);
+             box-shadow: /* More intense interactive glow */
+                0 0 20px 7px var(--glow-color-interactive), 
+                0 0 45px 18px var(--glow-color-interactive),
+                0 0 90px 28px var(--glow-color-interactive),
+                inset 0 0 1px 1px var(--image-border-color),
+                /* Pseudo-thickness effect when tilted/interacting */
+                inset var(--thickness-size) var(--thickness-size) 0 var(--thickness-color), /* Top-left inner shadow */
+                inset calc(var(--thickness-size) * -1) calc(var(--thickness-size) * -1) 0 var(--thickness-color); /* Bottom-right inner shadow */
+        }
+
+        /* Click bounce animation */
+        #ratImage.is-clicked-bounce {
+            animation: bouncePop 0.3s ease-out;
+        }
+        @keyframes bouncePop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.08); } /* Pop out slightly more */
+            100% { transform: scale(1); }
         }
         
         @media (prefers-reduced-motion: reduce) {
@@ -112,32 +93,29 @@
             #introText { animation: none !important; }
             .image-wrapper, .image-wrapper.visible { animation: none !important; opacity: 1 !important; transform: scale(1) rotateZ(0deg) translateY(0px) !important; visibility: visible !important; }
             #ratImage { transition: none !important; animation: none !important; box-shadow: 0 0 15px 5px var(--glow-color-base), 0 0 30px 10px var(--glow-color-base), inset 0 0 1px 1px var(--image-border-color); }
-            #ratImage.is-levitating { animation: none !important; }
+            #ratImage.is-levitating, #ratImage.is-clicked-bounce { animation: none !important; }
         }
     </style>
 </head>
 <body>
     <div id="starryBackground"><div id="stars1"></div><div id="stars2"></div><div id="stars3"></div></div>
-    <div id="introScreen">
-        <div id="introText">The Big Rat Experience</div> <!-- UPDATED -->
-        <div id="introSubText">Tap Here to Begin</div> <!-- UPDATED -->
-    </div>
+    <div id="introScreen"><div id="introText">The Big Rat Experience</div><div id="introSubText">Tap Here to Begin</div></div>
     <div class="image-wrapper" tabindex="0">
-        <img src="https://raw.githubusercontent.com/zryr/big-rat/32e48fdb45b16e8e6dfb6eccfdd0c45ba251671b/BigRat-Enhanced.png" alt="A large, fluffy rat looking towards the camera." id="ratImage"> <!-- UPDATED IMAGE -->
+        <img src="https://raw.githubusercontent.com/zryr/big-rat/32e48fdb45b16e8e6dfb6eccfdd0c45ba251671b/BigRat-Enhanced.png" alt="A large, fluffy rat." id="ratImage">
     </div>
 
     <audio id="bgMusic" loop><source src="sounds/background-music.mp3" type="audio/mpeg"></audio>
     <audio id="tapSfx"><source src="sounds/tap-sfx.mp3" type="audio/mpeg"></audio>
-    <audio id="returnSfx"><source src="sounds/Swish-Return.mp3" type="audio/mpeg"></audio> <!-- ADDED Return SFX -->
+    <audio id="returnSfx"><source src="sounds/Swish-Return.mp3" type="audio/mpeg"></audio>
 
 
     <script>
         const TILT_MAX_ROTATION = 18;
         const TILT_RETURN_SPEED_MS = 300;
-        const TILT_SCALE_EFFECT = 1.04;
-        const MOUSE_MOVE_THROTTLE_MS = 8; // Slightly reduced for responsiveness
+        const TILT_SCALE_EFFECT = 1.04; 
+        const MOUSE_MOVE_THROTTLE_MS = 8; 
         const IDLE_TIMEOUT = 2000;
-        const Y_AXIS_SENSITIVITY_BOOST = 1.0; // Reset boost, as direct mapping is usually best. Can re-add if needed.
+        const Y_AXIS_SENSITIVITY_BOOST = 1.0; 
 
         const introScreen = document.getElementById('introScreen');
         const introText = document.getElementById('introText');
@@ -145,70 +123,40 @@
         const ratImage = document.getElementById('ratImage');
         const bgMusic = document.getElementById('bgMusic'); 
         const tapSfx = document.getElementById('tapSfx');   
-        const returnSfx = document.getElementById('returnSfx'); // Added
+        const returnSfx = document.getElementById('returnSfx'); 
         
         let prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         let experienceStarted = false;
         let idleTimer = null;
+        let isBouncing = false; // Flag to prevent re-triggering bounce during animation
 
-        function requestFullscreen() {
-            const elem = document.documentElement; // Get the root element (html)
-            if (elem.requestFullscreen) {
-                elem.requestFullscreen().catch(err => console.warn(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`));
-            } else if (elem.webkitRequestFullscreen) { /* Safari */
-                elem.webkitRequestFullscreen().catch(err => console.warn(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`));
-            } else if (elem.msRequestFullscreen) { /* IE11 */
-                elem.msRequestFullscreen();
-            }
-        }
-
+        function requestFullscreen() { /* Same as before */ }
         function startLevitation() { /* Same as before */ }
         function stopLevitation() { /* Same as before */ }
         function resetIdleTimer() { /* Same as before */ }
-        startLevitation = function() { if (!experienceStarted || prefersReducedMotion || imageWrapper.classList.contains('is-interacting')) return; ratImage.classList.add('is-levitating'); };
+        requestFullscreen = function() { const elem = document.documentElement; if (elem.requestFullscreen) { elem.requestFullscreen().catch(err => {}); } else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen().catch(err => {}); } else if (elem.msRequestFullscreen) { elem.msRequestFullscreen(); }};
+        startLevitation = function() { if (!experienceStarted || prefersReducedMotion || imageWrapper.classList.contains('is-interacting') || isBouncing) return; ratImage.classList.add('is-levitating'); };
         stopLevitation = function() { ratImage.classList.remove('is-levitating'); };
         resetIdleTimer = function() { if (!experienceStarted) return; stopLevitation(); clearTimeout(idleTimer); if (!prefersReducedMotion) { idleTimer = setTimeout(startLevitation, IDLE_TIMEOUT); }};
 
-
-        function handleIntroFadeOut(event) {
-            if (event.target === introScreen && event.propertyName === 'opacity' && introScreen.classList.contains('hidden')) {
-                imageWrapper.classList.add('visible');
-                if (prefersReducedMotion) {
-                    imageWrapper.style.opacity = '1'; imageWrapper.style.transform = 'scale(1)';
-                } else {
-                    resetIdleTimer(); 
-                    bgMusic.play().catch(e => console.warn("Background music autoplay failed:", e));
-                }
-                introScreen.style.display = 'none';
-                introScreen.removeEventListener('transitionend', handleIntroFadeOut);
-            }
-        }
-        function startExperience() {
-            if (experienceStarted) return;
-            experienceStarted = true;
-            requestFullscreen(); // Request fullscreen
-            introText.classList.add('popped');
-            if (!prefersReducedMotion) {
-                tapSfx.currentTime = 0;
-                tapSfx.play().catch(e => console.warn("Intro tap SFX failed:", e));
-            }
-            introScreen.addEventListener('transitionend', handleIntroFadeOut);
-            setTimeout(() => introScreen.classList.add('hidden'), 300);
-        }
+        function handleIntroFadeOut(event) { /* Same as before */ }
+        function startExperience() { /* Same as before, includes requestFullscreen */ }
+        handleIntroFadeOut = function(event) { if (event.target === introScreen && event.propertyName === 'opacity' && introScreen.classList.contains('hidden')) { imageWrapper.classList.add('visible'); if (prefersReducedMotion) { imageWrapper.style.opacity = '1'; imageWrapper.style.transform = 'scale(1)'; } else { resetIdleTimer(); bgMusic.play().catch(e => {}); } introScreen.style.display = 'none'; introScreen.removeEventListener('transitionend', handleIntroFadeOut); }};
+        startExperience = function() { if (experienceStarted) return; experienceStarted = true; requestFullscreen(); introText.classList.add('popped'); if (!prefersReducedMotion) { tapSfx.currentTime = 0; tapSfx.play().catch(e => {}); } introScreen.addEventListener('transitionend', handleIntroFadeOut); setTimeout(() => introScreen.classList.add('hidden'), 300); };
         introScreen.addEventListener('click', startExperience);
         introScreen.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') startExperience(); });
 
         const throttle = function(func, limit) { let inThrottle; return function(...args) { const context = this; if (!inThrottle) { func.apply(context, args); inThrottle = true; setTimeout(() => inThrottle = false, limit); }}};
 
         function handleInteractionStart(event) {
-            if (!experienceStarted) return;
+            if (!experienceStarted || isBouncing) return; // Don't start tilt if bouncing
             stopLevitation(); 
             clearTimeout(idleTimer); 
-            imageWrapper.classList.add('is-interacting');
+            imageWrapper.classList.add('is-interacting'); // For glow and thickness
             ratImage.style.transition = `transform 0.05s linear, box-shadow 0.2s ease-out`; 
             if (event.type === 'touchstart' && !prefersReducedMotion) {
                  tapSfx.currentTime = 0;
-                 tapSfx.play().catch(e => console.warn("Image tap SFX failed:", e));
+                 tapSfx.play().catch(e => {});
             }
             if (prefersReducedMotion && event.type !== 'touchstart') return;
             if (event.type === 'keydown' && (event.key === 'Enter' || event.key === ' ')) {
@@ -217,7 +165,7 @@
         }
 
         const throttledHandleInteractionMove = throttle(function handleInteractionMove(event) {
-            if (!experienceStarted || !imageWrapper.classList.contains('is-interacting')) return;
+            if (!experienceStarted || !imageWrapper.classList.contains('is-interacting') || isBouncing) return; // Don't tilt if bouncing
             if (prefersReducedMotion) {
                  ratImage.style.transform = `rotateX(0deg) rotateY(0deg) scale(${TILT_SCALE_EFFECT * 0.99})`;
                  return;
@@ -233,22 +181,23 @@
             const x = clientX - rect.left, y = clientY - rect.top;
             const centerX = rect.width / 2, centerY = rect.height / 2;
             const deltaX = x - centerX, deltaY = y - centerY;
-            
             const rotateX = (deltaY / centerY) * TILT_MAX_ROTATION * Y_AXIS_SENSITIVITY_BOOST; 
             const rotateY = (deltaX / centerX) * TILT_MAX_ROTATION;
             ratImage.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(${TILT_SCALE_EFFECT})`;
         }, MOUSE_MOVE_THROTTLE_MS);
 
         function handleInteractionEnd() {
-            if (!experienceStarted) return;
+            if (!experienceStarted || isBouncing) return; // Don't reset if bouncing (bounce will handle its own reset)
+            
+            // Only remove is-interacting if not about to bounce. Bounce will handle it.
+            // This check is tricky because click is separate.
+            // For now, always remove on interaction end, bounce will re-add if needed.
             imageWrapper.classList.remove('is-interacting');
+
             ratImage.style.transition = `transform ${TILT_RETURN_SPEED_MS}ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease-out`;
             
-            // Check if the image actually moved significantly before playing return sound
             const currentTransform = getComputedStyle(ratImage).transform;
-            // A simple check; more robust would be to parse the matrix or store last rotation
-            const isTransformed = currentTransform !== 'none' && !currentTransform.includes('matrix(1, 0, 0, 1, 0, 0)');
-
+            const isTransformed = currentTransform !== 'none' && !currentTransform.includes('matrix(1, 0, 0, 1, 0, 0)'); // Simple check
 
             if (prefersReducedMotion) {
                 ratImage.style.transform = 'rotateX(0deg) rotateY(0deg) scale(1)'; 
@@ -256,26 +205,69 @@
             } else {
                 ratImage.style.transform = 'rotateX(0deg) rotateY(0deg) scale(1)';
                 resetIdleTimer(); 
-                if(isTransformed) { // Only play if it was tilted
+                if(isTransformed) {
+                    returnSfx.volume = 1.0; // Ensure full volume
                     returnSfx.currentTime = 0;
-                    returnSfx.play().catch(e => console.warn("Return SFX failed:", e));
+                    returnSfx.play().catch(e => {});
                 }
             }
         }
         
+        // Click to Bounce Logic
+        imageWrapper.addEventListener('click', function(e) {
+            if (!experienceStarted || prefersReducedMotion || isBouncing) return;
+            // Prevent if it was part of a drag (very basic check)
+            // More robust would be to check mouse movement between mousedown and mouseup
+            if (imageWrapper.classList.contains('is-interacting') && e.type === 'click' && (Math.abs(ratImage.style.transform.indexOf('rotateX(0deg) rotateY(0deg)')) === -1 )) {
+                 // If it's already tilted significantly from a drag, maybe don't bounce, or handle differently.
+                 // For now, let it bounce.
+            }
+
+            isBouncing = true;
+            stopLevitation(); // Stop levitation if it was happening
+            clearTimeout(idleTimer); // Clear idle timer
+
+            imageWrapper.classList.add('is-interacting'); // Trigger interactive glow
+            ratImage.classList.add('is-clicked-bounce');
+            
+            // Play tap sound for bounce
+            tapSfx.currentTime = 0;
+            tapSfx.volume = 0.7; // Slightly softer for bounce click vs intro
+            tapSfx.play().catch(err => {});
+
+
+            function onBounceEnd() {
+                ratImage.classList.remove('is-clicked-bounce');
+                imageWrapper.classList.remove('is-interacting'); // Remove glow
+                ratImage.removeEventListener('animationend', onBounceEnd);
+                isBouncing = false;
+                resetIdleTimer(); // Restart idle timer after bounce
+                // Ensure final transform is reset if bounce animation doesn't perfectly end at scale(1)
+                // handleInteractionEnd might be better here if no other interaction is pending
+                if (!imageWrapper.classList.contains('is-interacting')) { // If no new drag started during bounce
+                     ratImage.style.transform = 'rotateX(0deg) rotateY(0deg) scale(1)';
+                }
+            }
+            ratImage.addEventListener('animationend', onBounceEnd, { once: true });
+        });
+
+
+        window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', (e) => { /* Same */ });
+        if (prefersReducedMotion) { /* Same */ }
         window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', (e) => { prefersReducedMotion = e.matches; stopLevitation(); clearTimeout(idleTimer); if (prefersReducedMotion) { handleInteractionEnd(); if (experienceStarted) { imageWrapper.style.animation = 'none'; imageWrapper.style.opacity = '1'; imageWrapper.style.transform = 'scale(1) rotateZ(0deg) translateY(0px)'; } else { introText.style.animation = 'none'; } ratImage.style.animation = 'none'; } else { if (experienceStarted) { imageWrapper.style.animation = ''; resetIdleTimer(); } else { introText.style.animation = ''; } } });
         if (prefersReducedMotion) { stopLevitation(); clearTimeout(idleTimer); if (experienceStarted) { imageWrapper.style.opacity = '1'; imageWrapper.style.transform = 'scale(1) rotateZ(0deg) translateY(0px)'; ratImage.style.animation = 'none'; } else { introText.style.animation = 'none'; } }
 
+
         imageWrapper.addEventListener('mouseenter', handleInteractionStart);
-        imageWrapper.addEventListener('mousemove', (e) => { if (!experienceStarted) return; stopLevitation(); clearTimeout(idleTimer); throttledHandleInteractionMove(e); });
+        imageWrapper.addEventListener('mousemove', (e) => { if (!experienceStarted || isBouncing) return; stopLevitation(); clearTimeout(idleTimer); throttledHandleInteractionMove(e); });
         imageWrapper.addEventListener('mouseleave', handleInteractionEnd);
-        imageWrapper.addEventListener('touchstart', (e) => { handleInteractionStart(e); if (experienceStarted && !prefersReducedMotion) throttledHandleInteractionMove(e);}, { passive: true });
-        imageWrapper.addEventListener('touchmove', (e) => { if (!experienceStarted) return; stopLevitation(); clearTimeout(idleTimer); throttledHandleInteractionMove(e); }, { passive: true });
+        imageWrapper.addEventListener('touchstart', (e) => { if(isBouncing) { e.preventDefault(); return; } handleInteractionStart(e); if (experienceStarted && !prefersReducedMotion) throttledHandleInteractionMove(e);}, { passive: false }); // passive false if using preventDefault
+        imageWrapper.addEventListener('touchmove', (e) => { if (!experienceStarted || isBouncing) return; stopLevitation(); clearTimeout(idleTimer); throttledHandleInteractionMove(e); }, { passive: true });
         imageWrapper.addEventListener('touchend', handleInteractionEnd);
         imageWrapper.addEventListener('touchcancel', handleInteractionEnd);
         imageWrapper.addEventListener('focus', handleInteractionStart);
         imageWrapper.addEventListener('blur', handleInteractionEnd);
-        imageWrapper.addEventListener('keydown', (e) => { if (!experienceStarted) return; if (e.key === 'Enter' || e.key === ' ') { handleInteractionStart(e); setTimeout(handleInteractionEnd, 300); }});
+        imageWrapper.addEventListener('keydown', (e) => { if (!experienceStarted || isBouncing) return; if (e.key === 'Enter' || e.key === ' ') { handleInteractionStart(e); setTimeout(handleInteractionEnd, 300); }});
     </script>
 </body>
 </html>
