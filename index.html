@@ -120,6 +120,20 @@
             opacity: 1;
         }
         
+        #attribution {
+            position: fixed;
+            bottom: 8px;
+            right: 12px;
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.15);
+            text-decoration: none;
+            transition: color 0.3s;
+            z-index: 5;
+        }
+        #attribution:hover {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
         @media (prefers-reduced-motion: reduce) { 
             #starryBackgroundContainer, .shooting-star, #introText, 
             .image-wrapper, .image-wrapper.visible, 
@@ -140,6 +154,7 @@
         <img src="https://raw.githubusercontent.com/zryr/big-rat/9f9a0b56c085cd06ee4726d7f51921d1c2f147c6/BigRat-Optimized.jpg" alt="A large, fluffy rat." id="ratImage">
     </div>
     <div id="ratFactPopup"></div>
+    <a id="attribution" href="https://github.com/syshi" target="_blank" rel="noopener noreferrer">Made with ❤️ by Syshi</a>
 
     <audio id="bgMusic" loop><source src="sounds/background-music.mp3" type="audio/mpeg"></audio>
     <audio id="tapSfx"><source src="sounds/tap-sfx.mp3" type="audio/mpeg"></audio>
@@ -167,6 +182,9 @@
         const MOUSE_SHAKE_MIN_DISTANCE = 60;   // Min total pixel travel for shake
         const MOUSE_SHAKE_DIRECTION_CHANGES = 3; // Min direction changes for shake
         const SHAKE_COOLDOWN_MS = 2000; // Cooldown after a shake
+        const MOBILE_SHAKE_THRESHOLD = 15; // m/s^2
+        let lastAccel = { x: null, y: null, z: null };
+        let isCheckingMotion = false;
 
         // Rat Facts Constants
         const RAT_FACT_INTERVAL_MIN = 20000; // 20 seconds
@@ -238,7 +256,34 @@
         };
         
         handleIntroFadeOut = function(event) { if (event.target === introScreen && event.propertyName === 'opacity' && introScreen.classList.contains('hidden')) { imageWrapper.classList.add('visible'); if (prefersReducedMotion) { imageWrapper.style.opacity = '1'; imageWrapper.style.transform = 'scale(1)'; } else { resetIdleTimer(); bgMusic.play().catch(e => {}); } introScreen.style.display = 'none'; introScreen.removeEventListener('transitionend', handleIntroFadeOut); }};
-        startExperience = function() { if (experienceStarted) return; experienceStarted = true; requestFullscreen(); introText.classList.add('popped'); if (!prefersReducedMotion) { tapSfx.currentTime = 0; tapSfx.play().catch(e => {}); } introScreen.addEventListener('transitionend', handleIntroFadeOut); setTimeout(() => introScreen.classList.add('hidden'), 300); };
+        startExperience = function() {
+    if (experienceStarted) return;
+    experienceStarted = true;
+
+    // Request fullscreen and start audio/visuals
+    requestFullscreen();
+    introText.classList.add('popped');
+    if (!prefersReducedMotion) {
+        tapSfx.currentTime = 0;
+        tapSfx.play().catch(e => {});
+    }
+    introScreen.addEventListener('transitionend', handleIntroFadeOut);
+    setTimeout(() => introScreen.classList.add('hidden'), 300);
+
+    // Mobile Shake Detection
+    if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+        DeviceMotionEvent.requestPermission()
+            .then(permissionState => {
+                if (permissionState === 'granted') {
+                    window.addEventListener('devicemotion', handleDeviceMotion);
+                }
+            })
+            .catch(console.error);
+    } else {
+        // Handle non-iOS 13+ devices
+        window.addEventListener('devicemotion', handleDeviceMotion);
+    }
+};
         introScreen.addEventListener('click', startExperience);
         introScreen.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') startExperience(); });
         const throttle = function(func, limit) { let inThrottle; return function(...args) { const context = this; if (!inThrottle) { func.apply(context, args); inThrottle = true; setTimeout(() => inThrottle = false, limit); }}};
@@ -291,6 +336,23 @@
                 triggerVisualShake();
                 mouseMoveHistory = []; // Reset history after shake
             }
+        }
+
+        function handleDeviceMotion(event) {
+            if (prefersReducedMotion || Date.now() - lastShakeTimestamp < SHAKE_COOLDOWN_MS) return;
+
+            const { x, y, z } = event.accelerationIncludingGravity;
+
+            if (lastAccel.x !== null) {
+                const deltaX = Math.abs(x - lastAccel.x);
+                const deltaY = Math.abs(y - lastAccel.y);
+                const deltaZ = Math.abs(z - lastAccel.z);
+
+                if (deltaX + deltaY + deltaZ > MOBILE_SHAKE_THRESHOLD) {
+                    triggerVisualShake();
+                }
+            }
+            lastAccel = { x, y, z };
         }
 
         function triggerVisualShake() {
@@ -357,21 +419,15 @@
 
 
         function handleInteractionStart(event) { /* ... same, ensure calls clearAllIdleTimers ... */ }
-        handleInteractionStart = function(event) { if (!experienceStarted || isBouncing) return; stopLevitation(); clearAllIdleTimers(); imageWrapper.classList.add('is-interacting'); ratImage.style.transition = `transform 0.05s linear, box-shadow 0.2s ease-out`; if (event.type === 'touchstart' && !prefersReducedMotion) { tapSfx.currentTime = 0; tapSfx.play().catch(e => {}); } if (prefersReducedMotion && event.type !== 'touchstart') return; if (event.type === 'keydown' && (event.key === 'Enter' || event.key === ' ')) { currentTiltX = 0; currentTiltY = 0; currentScale = TILT_SCALE_EFFECT * 0.98; ratImage.style.transform = `rotateX(${currentTiltX}deg) rotateY(${currentTiltY}deg) scale(${currentScale})`; } mouseMoveHistory = []; /* Clear for shake detection */};
+        handleInteractionStart = function(event) { if (!experienceStarted || isBouncing) return; stopLevitation(); clearAllIdleTimers(); imageWrapper.classList.add('is-interacting'); ratImage.style.transition = `transform 0.05s linear, box-shadow 0.2s ease-out`; if (event.pointerType === 'touch' && !prefersReducedMotion) { tapSfx.currentTime = 0; tapSfx.play().catch(e => {}); } if (prefersReducedMotion && event.pointerType !== 'touch') return; if (event.type === 'keydown' && (event.key === 'Enter' || event.key === ' ')) { currentTiltX = 0; currentTiltY = 0; currentScale = TILT_SCALE_EFFECT * 0.98; ratImage.style.transform = `rotateX(${currentTiltX}deg) rotateY(${currentTiltY}deg) scale(${currentScale})`; } mouseMoveHistory = []; /* Clear for shake detection */};
 
 
         const throttledHandleInteractionMove = throttle(function handleInteractionMove(event) {
-            if (!experienceStarted || !imageWrapper.classList.contains('is-interacting') || isBouncing) return;
-            if (prefersReducedMotion) { /* ... same ... */ return; }
-            
+            if (!experienceStarted || !imageWrapper.classList.contains('is-interacting') || isBouncing || prefersReducedMotion) return;
+
             const rect = imageWrapper.getBoundingClientRect();
-            let clientX, clientY;
-            if (event.type.startsWith('touch')) {
-                if (event.touches.length === 0) return;
-                clientX = event.touches[0].clientX; clientY = event.touches[0].clientY;
-            } else {
-                clientX = event.clientX; clientY = event.clientY;
-            }
+            const clientX = event.clientX;
+            const clientY = event.clientY;
             
             detectShake(clientX, clientY); // Call shake detection here
 
@@ -405,13 +461,13 @@
         // Event Listeners (condensed)
         window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', (e) => { prefersReducedMotion = e.matches; stopLevitation(); clearAllIdleTimers(); ratImage.style.setProperty('--dynamic-thickness-highlight-opacity', '0'); if (prefersReducedMotion) { handleInteractionEnd(); if (experienceStarted) { imageWrapper.style.animation = 'none'; imageWrapper.style.opacity = '1'; imageWrapper.style.transform = 'scale(1) rotateZ(0deg) translateY(0px)'; } else { introText.style.animation = 'none'; } ratImage.style.animation = 'none'; } else { if (experienceStarted) { imageWrapper.style.animation = ''; resetIdleTimer(); } else { introText.style.animation = ''; } } });
         if (prefersReducedMotion) { stopLevitation(); clearAllIdleTimers(); ratImage.style.setProperty('--dynamic-thickness-highlight-opacity', '0'); if (experienceStarted) { imageWrapper.style.opacity = '1'; imageWrapper.style.transform = 'scale(1) rotateZ(0deg) translateY(0px)'; ratImage.style.animation = 'none'; } else { introText.style.animation = 'none'; } }
-        imageWrapper.addEventListener('mouseenter', handleInteractionStart);
-        imageWrapper.addEventListener('mousemove', (e) => { if (!experienceStarted || isBouncing) return; stopLevitation(); clearAllIdleTimers(); throttledHandleInteractionMove(e); });
-        imageWrapper.addEventListener('mouseleave', handleInteractionEnd);
-        imageWrapper.addEventListener('touchstart', (e) => { if(isBouncing) { e.preventDefault(); return; } handleInteractionStart(e); if (experienceStarted && !prefersReducedMotion) throttledHandleInteractionMove(e);}, { passive: false });
-        imageWrapper.addEventListener('touchmove', (e) => { if (!experienceStarted || isBouncing) return; stopLevitation(); clearAllIdleTimers(); throttledHandleInteractionMove(e); }, { passive: true });
-        imageWrapper.addEventListener('touchend', handleInteractionEnd);
-        imageWrapper.addEventListener('touchcancel', handleInteractionEnd);
+        imageWrapper.addEventListener('pointerenter', handleInteractionStart);
+        imageWrapper.addEventListener('pointermove', (e) => { if (!experienceStarted || isBouncing) return; stopLevitation(); clearAllIdleTimers(); throttledHandleInteractionMove(e); });
+        imageWrapper.addEventListener('pointerleave', handleInteractionEnd);
+        imageWrapper.addEventListener('pointerdown', (e) => { if(isBouncing) { e.preventDefault(); return; } handleInteractionStart(e); if (experienceStarted && !prefersReducedMotion) throttledHandleInteractionMove(e);}, { passive: false });
+        imageWrapper.addEventListener('pointermove', (e) => { if (!experienceStarted || isBouncing) return; stopLevitation(); clearAllIdleTimers(); throttledHandleInteractionMove(e); }, { passive: true });
+        imageWrapper.addEventListener('pointerup', handleInteractionEnd);
+        imageWrapper.addEventListener('pointercancel', handleInteractionEnd);
         imageWrapper.addEventListener('focus', handleInteractionStart);
         imageWrapper.addEventListener('blur', handleInteractionEnd);
         imageWrapper.addEventListener('keydown', (e) => { if (!experienceStarted || isBouncing) return; if (e.key === 'Enter' || e.key === ' ') { handleInteractionStart(e); setTimeout(handleInteractionEnd, 300); }});
