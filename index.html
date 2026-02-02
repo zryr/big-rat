@@ -240,6 +240,8 @@
         const MOBILE_SHAKE_THRESHOLD = 15; // m/s^2
         let lastAccel = { x: null, y: null, z: null };
         let isCheckingMotion = false;
+        let interactionStartTime = 0;
+        let interactionStartPos = { x: 0, y: 0 };
 
         // Rat Facts Constants
         const RAT_FACT_INTERVAL_MIN = 20000; // 20 seconds
@@ -497,6 +499,8 @@
                 try {
                     imageWrapper.setPointerCapture(event.pointerId);
                 } catch(e) {}
+                interactionStartTime = Date.now();
+                interactionStartPos = { x: event.clientX, y: event.clientY };
             }
 
             stopLevitation();
@@ -561,49 +565,8 @@
 
         }, MOUSE_MOVE_THROTTLE_MS);
 
-        function handleInteractionEnd(event) {
-            if (!experienceStarted || isBouncing) return;
-
-            // FIX: If we are dragging (capturing), ignore pointerleave so interaction continues outside bounds
-            if (event && event.type === 'pointerleave' && event.pointerId && imageWrapper.hasPointerCapture(event.pointerId)) {
-                return;
-            }
-
-            // Release pointer capture
-            if (event && (event.type === 'pointerup' || event.type === 'pointercancel')) {
-                try {
-                    if(event.pointerId) imageWrapper.releasePointerCapture(event.pointerId);
-                } catch(e) {}
-            }
-
-            const wasInteracting = imageWrapper.classList.contains('is-interacting');
-            imageWrapper.classList.remove('is-interacting');
-            ratContainer.style.transition = `transform ${TILT_RETURN_SPEED_MS}ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease-out`;
-
-            const isTransformed = currentTiltX !== 0 || currentTiltY !== 0 || currentScale !== 1;
-            currentTiltX = 0;
-            currentTiltY = 0;
-            currentScale = 1;
-            ratContainer.style.setProperty('--dynamic-thickness-highlight-opacity', '0');
-            ratContainer.style.setProperty('--shine-opacity', '0'); // Hide shine
-
-            if (prefersReducedMotion) {
-                ratContainer.style.transform = `rotateX(${currentTiltX}deg) rotateY(${currentTiltY}deg) scale(${currentScale})`;
-                stopLevitation();
-            } else {
-                ratContainer.style.transform = `rotateX(${currentTiltX}deg) rotateY(${currentTiltY}deg) scale(${currentScale})`;
-                resetIdleTimer();
-                if(isTransformed && wasInteracting) {
-                    returnSfx.volume = 1.0;
-                    returnSfx.currentTime = 0;
-                    returnSfx.play().catch(e => {});
-                }
-            }
-            mouseMoveHistory = []; /* Clear for shake detection */
-        }
-        
-        imageWrapper.addEventListener('click', function(e) {
-            if (!experienceStarted || prefersReducedMotion || isBouncing) return;
+        function triggerTapBounce() {
+             if (!experienceStarted || prefersReducedMotion || isBouncing) return;
 
             rat_clicks++;
 
@@ -638,7 +601,59 @@
             }
 
             ratContainer.addEventListener('animationend', onBounceEnd, { once: true });
-        });
+        }
+
+        function handleInteractionEnd(event) {
+            if (!experienceStarted || isBouncing) return;
+
+            // FIX: If we are dragging (capturing), ignore pointerleave so interaction continues outside bounds
+            if (event && event.type === 'pointerleave' && event.pointerId && imageWrapper.hasPointerCapture(event.pointerId)) {
+                return;
+            }
+
+            // Release pointer capture
+            if (event && (event.type === 'pointerup' || event.type === 'pointercancel')) {
+                try {
+                    if(event.pointerId) imageWrapper.releasePointerCapture(event.pointerId);
+                } catch(e) {}
+            }
+
+            // Check for Tap
+            if (event && event.type === 'pointerup') {
+                const duration = Date.now() - interactionStartTime;
+                const dist = Math.hypot(event.clientX - interactionStartPos.x, event.clientY - interactionStartPos.y);
+
+                if (duration < 300 && dist < 10) {
+                    triggerTapBounce();
+                    return; // Stop here, bounce handles the reset
+                }
+            }
+
+            const wasInteracting = imageWrapper.classList.contains('is-interacting');
+            imageWrapper.classList.remove('is-interacting');
+            ratContainer.style.transition = `transform ${TILT_RETURN_SPEED_MS}ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease-out`;
+
+            const isTransformed = currentTiltX !== 0 || currentTiltY !== 0 || currentScale !== 1;
+            currentTiltX = 0;
+            currentTiltY = 0;
+            currentScale = 1;
+            ratContainer.style.setProperty('--dynamic-thickness-highlight-opacity', '0');
+            ratContainer.style.setProperty('--shine-opacity', '0'); // Hide shine
+
+            if (prefersReducedMotion) {
+                ratContainer.style.transform = `rotateX(${currentTiltX}deg) rotateY(${currentTiltY}deg) scale(${currentScale})`;
+                stopLevitation();
+            } else {
+                ratContainer.style.transform = `rotateX(${currentTiltX}deg) rotateY(${currentTiltY}deg) scale(${currentScale})`;
+                resetIdleTimer();
+                if(isTransformed && wasInteracting) {
+                    returnSfx.volume = 1.0;
+                    returnSfx.currentTime = 0;
+                    returnSfx.play().catch(e => {});
+                }
+            }
+            mouseMoveHistory = []; /* Clear for shake detection */
+        }
 
         // Event Listeners (Refactored and Cleaned)
         window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', (e) => {
