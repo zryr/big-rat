@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Big Rat - Interactive Fun</title>
+    <title>Big Rat</title>
 
     <meta property="og:title" content="Big Rat" />
     <meta property="og:description" content="Now THAT'S a Rat!" />
@@ -73,34 +73,6 @@
             display: inline-block;
             border-radius: 15px;
             transform-style: preserve-3d;
-        /* Shine Effect */
-        .image-wrapper::after {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            border-radius: 15px;
-            background: linear-gradient(
-                135deg,
-                rgba(255, 255, 255, 0) 0%,
-                rgba(255, 255, 255, 0) 40%,
-                rgba(255, 255, 255, 0.4) 50%,
-                rgba(255, 255, 255, 0) 60%,
-                rgba(255, 255, 255, 0) 100%
-            );
-            background-size: 200% 200%;
-            background-position: var(--shine-pos-x) var(--shine-pos-y);
-            pointer-events: none;
-            opacity: var(--shine-opacity);
-            transition: opacity 0.2s;
-            z-index: 2;
-            mix-blend-mode: overlay;
-        }
-
-        @keyframes popIn { 0% { opacity: 0; transform: scale(0.5) rotateZ(-15deg) translateY(20px); } 100% { opacity: 1; transform: scale(1) rotateZ(0deg) translateY(0px); } }
-        
-        #ratImage {
-            display: block; max-width: 75vw; max-height: 65vh;
-            object-fit: contain; border-radius: 15px;
             box-shadow: 
                 0 0 18px 6px var(--glow-color-base), 
                 0 0 40px 15px var(--glow-color-base),
@@ -317,7 +289,22 @@
         ];
 
         // --- CORE FUNCTIONS (condensed for brevity) ---
-        requestFullscreen = function() { const elem = document.documentElement; if (elem.requestFullscreen) { elem.requestFullscreen().catch(err => {}); } else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen().catch(err => {}); } else if (elem.msRequestFullscreen) { elem.msRequestFullscreen(); }};
+        requestFullscreen = function() {
+            const elem = document.documentElement;
+            if (elem.requestFullscreen) {
+                elem.requestFullscreen().catch(err => {});
+            } else if (elem.webkitRequestFullscreen) {
+                // Safari/iOS often returns undefined, not a promise
+                try {
+                    const result = elem.webkitRequestFullscreen();
+                    if (result && typeof result.catch === 'function') {
+                        result.catch(err => {});
+                    }
+                } catch (e) {}
+            } else if (elem.msRequestFullscreen) {
+                elem.msRequestFullscreen();
+            }
+        };
         startLevitation = function() { if (!experienceStarted || prefersReducedMotion || imageWrapper.classList.contains('is-interacting') || isBouncing) return; ratContainer.classList.add('is-levitating'); };
         stopLevitation = function() { ratContainer.classList.remove('is-levitating'); };
         
@@ -524,21 +511,11 @@
 
             if (prefersReducedMotion && event.pointerType !== 'touch') return;
 
-            ratImage.style.transition = `transform 0.05s linear, box-shadow 0.2s ease-out`;
-
-            if (event.pointerType === 'touch' && !prefersReducedMotion) {
-                tapSfx.currentTime = 0;
-                tapSfx.play().catch(e => {});
-            }
-
-            if (prefersReducedMotion && event.pointerType !== 'touch') return;
-
             if (event.type === 'keydown' && (event.key === 'Enter' || event.key === ' ')) {
                 currentTiltX = 0;
                 currentTiltY = 0;
                 currentScale = TILT_SCALE_EFFECT * 0.98;
                 ratContainer.style.transform = `rotateX(${currentTiltX}deg) rotateY(${currentTiltY}deg) scale(${currentScale})`;
-                ratImage.style.transform = `rotateX(${currentTiltX}deg) rotateY(${currentTiltY}deg) scale(${currentScale})`;
             }
 
             mouseMoveHistory = []; /* Clear for shake detection */
@@ -582,15 +559,6 @@
             ratContainer.style.setProperty('--shine-pos-y', `${100 - percentY}%`);
             ratContainer.style.setProperty('--shine-opacity', '1');
 
-            // --- SHINE EFFECT CALCULATION ---
-            // Calculate percentage position of cursor relative to element
-            const percentX = (x / rect.width) * 100;
-            const percentY = (y / rect.height) * 100;
-
-            imageWrapper.style.setProperty('--shine-pos-x', `${100 - percentX}%`);
-            imageWrapper.style.setProperty('--shine-pos-y', `${100 - percentY}%`);
-            imageWrapper.style.setProperty('--shine-opacity', '1');
-
         }, MOUSE_MOVE_THROTTLE_MS);
 
         function handleInteractionEnd(event) {
@@ -611,7 +579,6 @@
             const wasInteracting = imageWrapper.classList.contains('is-interacting');
             imageWrapper.classList.remove('is-interacting');
             ratContainer.style.transition = `transform ${TILT_RETURN_SPEED_MS}ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease-out`;
-            ratImage.style.transition = `transform ${TILT_RETURN_SPEED_MS}ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease-out`;
 
             const isTransformed = currentTiltX !== 0 || currentTiltY !== 0 || currentScale !== 1;
             currentTiltX = 0;
@@ -625,14 +592,6 @@
                 stopLevitation();
             } else {
                 ratContainer.style.transform = `rotateX(${currentTiltX}deg) rotateY(${currentTiltY}deg) scale(${currentScale})`;
-            ratImage.style.setProperty('--dynamic-thickness-highlight-opacity', '0');
-            imageWrapper.style.setProperty('--shine-opacity', '0'); // Hide shine
-
-            if (prefersReducedMotion) {
-                ratImage.style.transform = `rotateX(${currentTiltX}deg) rotateY(${currentTiltY}deg) scale(${currentScale})`;
-                stopLevitation();
-            } else {
-                ratImage.style.transform = `rotateX(${currentTiltX}deg) rotateY(${currentTiltY}deg) scale(${currentScale})`;
                 resetIdleTimer();
                 if(isTransformed && wasInteracting) {
                     returnSfx.volume = 1.0;
@@ -657,7 +616,6 @@
             clearAllIdleTimers();
             imageWrapper.classList.add('is-interacting');
             ratContainer.classList.add('is-clicked-bounce');
-            ratImage.classList.add('is-clicked-bounce');
 
             if (!prefersReducedMotion) {
                 tapSfx.currentTime = 0;
@@ -669,9 +627,6 @@
                 ratContainer.classList.remove('is-clicked-bounce');
                 imageWrapper.classList.remove('is-interacting');
                 ratContainer.removeEventListener('animationend', onBounceEnd);
-                ratImage.classList.remove('is-clicked-bounce');
-                imageWrapper.classList.remove('is-interacting');
-                ratImage.removeEventListener('animationend', onBounceEnd);
                 isBouncing = false;
                 currentTiltX = 0;
                 currentTiltY = 0;
@@ -721,51 +676,6 @@
                 imageWrapper.style.opacity = '1';
                 imageWrapper.style.transform = 'scale(1) rotateZ(0deg) translateY(0px)';
                 ratContainer.style.animation = 'none';
-                ratImage.style.transform = 'rotateX(0deg) rotateY(0deg) scale(1)';
-                ratImage.style.setProperty('--dynamic-thickness-highlight-opacity', '0');
-                imageWrapper.style.setProperty('--shine-opacity', '0');
-                resetIdleTimer();
-            }
-
-            ratImage.addEventListener('animationend', onBounceEnd, { once: true });
-        });
-
-        // Event Listeners (Refactored and Cleaned)
-        window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', (e) => {
-            prefersReducedMotion = e.matches;
-            stopLevitation();
-            clearAllIdleTimers();
-            ratImage.style.setProperty('--dynamic-thickness-highlight-opacity', '0');
-            imageWrapper.style.setProperty('--shine-opacity', '0');
-            if (prefersReducedMotion) {
-                handleInteractionEnd();
-                if (experienceStarted) {
-                    imageWrapper.style.animation = 'none';
-                    imageWrapper.style.opacity = '1';
-                    imageWrapper.style.transform = 'scale(1) rotateZ(0deg) translateY(0px)';
-                } else {
-                    introText.style.animation = 'none';
-                }
-                ratImage.style.animation = 'none';
-            } else {
-                if (experienceStarted) {
-                    imageWrapper.style.animation = '';
-                    resetIdleTimer();
-                } else {
-                    introText.style.animation = '';
-                }
-            }
-        });
-
-        if (prefersReducedMotion) {
-            stopLevitation();
-            clearAllIdleTimers();
-            ratImage.style.setProperty('--dynamic-thickness-highlight-opacity', '0');
-            imageWrapper.style.setProperty('--shine-opacity', '0');
-            if (experienceStarted) {
-                imageWrapper.style.opacity = '1';
-                imageWrapper.style.transform = 'scale(1) rotateZ(0deg) translateY(0px)';
-                ratImage.style.animation = 'none';
             } else {
                 introText.style.animation = 'none';
             }
@@ -779,7 +689,6 @@
         imageWrapper.addEventListener('pointerdown', (e) => {
              e.preventDefault(); // Prevent default browser drag/selection
              if(isBouncing) { return; }
-             if(isBouncing) { e.preventDefault(); return; }
              handleInteractionStart(e);
              if (experienceStarted && !prefersReducedMotion) throttledHandleInteractionMove(e);
         });
