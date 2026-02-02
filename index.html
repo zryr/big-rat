@@ -27,6 +27,9 @@
             --thickness-highlight-color: rgba(80, 90, 120, 0.6);
             --thickness-depth-px: 4; 
             --dynamic-thickness-highlight-opacity: 0; 
+            --shine-pos-x: 50%;
+            --shine-pos-y: 50%;
+            --shine-opacity: 0;
         }
 
         body { margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; perspective: 1200px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #000000; }
@@ -46,9 +49,45 @@
         @keyframes pulseTextGlowIntro { 0%, 100% { text-shadow: 0 0 8px #fff, 0 0 18px #fff, 0 0 28px #ccc; } 50% { text-shadow: 0 0 15px #fff, 0 0 30px #fff, 0 0 45px #eee; } }
         #introSubText { font-size: clamp(1rem, 2.5vw, 1.2rem); color: #bbb; margin-top: 15px; }
 
-        .image-wrapper { position: relative; z-index: 0; cursor: grab; opacity: 0; transform: scale(0.5) rotateZ(-15deg) translateY(20px); transition: opacity 0.5s, transform 0.5s; outline: none; -webkit-tap-highlight-color: transparent; visibility: hidden; transform-style: preserve-3d; }
+        .image-wrapper {
+            position: relative;
+            z-index: 0;
+            cursor: grab;
+            opacity: 0;
+            transform: scale(0.5) rotateZ(-15deg) translateY(20px);
+            transition: opacity 0.5s, transform 0.5s;
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
+            visibility: hidden;
+            transform-style: preserve-3d;
+            touch-action: none; /* KEY FIX: Prevent browser scrolling/zooming gestures */
+        }
         .image-wrapper.visible { visibility: visible; opacity: 0; animation: popIn 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards; animation-delay: 0s; }
         .image-wrapper:focus-visible { outline: 3px solid var(--focus-outline-color); outline-offset: 8px; border-radius: 18px; }
+
+        /* Shine Effect */
+        .image-wrapper::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            border-radius: 15px;
+            background: linear-gradient(
+                135deg,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0) 40%,
+                rgba(255, 255, 255, 0.4) 50%,
+                rgba(255, 255, 255, 0) 60%,
+                rgba(255, 255, 255, 0) 100%
+            );
+            background-size: 200% 200%;
+            background-position: var(--shine-pos-x) var(--shine-pos-y);
+            pointer-events: none;
+            opacity: var(--shine-opacity);
+            transition: opacity 0.2s;
+            z-index: 2;
+            mix-blend-mode: overlay;
+        }
+
         @keyframes popIn { 0% { opacity: 0; transform: scale(0.5) rotateZ(-15deg) translateY(20px); } 100% { opacity: 1; transform: scale(1) rotateZ(0deg) translateY(0px); } }
         
         #ratImage {
@@ -419,9 +458,37 @@
             squeakTimer = setTimeout(playRandomSqueak, interval);
         }
 
+        function handleInteractionStart(event) {
+            if (!experienceStarted || isBouncing) return;
 
-        function handleInteractionStart(event) { /* ... same, ensure calls clearAllIdleTimers ... */ }
-        handleInteractionStart = function(event) { if (!experienceStarted || isBouncing) return; stopLevitation(); clearAllIdleTimers(); imageWrapper.classList.add('is-interacting'); ratImage.style.transition = `transform 0.05s linear, box-shadow 0.2s ease-out`; if (event.pointerType === 'touch' && !prefersReducedMotion) { tapSfx.currentTime = 0; tapSfx.play().catch(e => {}); } if (prefersReducedMotion && event.pointerType !== 'touch') return; if (event.type === 'keydown' && (event.key === 'Enter' || event.key === ' ')) { currentTiltX = 0; currentTiltY = 0; currentScale = TILT_SCALE_EFFECT * 0.98; ratImage.style.transform = `rotateX(${currentTiltX}deg) rotateY(${currentTiltY}deg) scale(${currentScale})`; } mouseMoveHistory = []; /* Clear for shake detection */};
+            // Capture pointer for consistent tracking (crucial for mobile drag)
+            if (event.type === 'pointerdown') {
+                try {
+                    imageWrapper.setPointerCapture(event.pointerId);
+                } catch(e) {}
+            }
+
+            stopLevitation();
+            clearAllIdleTimers();
+            imageWrapper.classList.add('is-interacting');
+            ratImage.style.transition = `transform 0.05s linear, box-shadow 0.2s ease-out`;
+
+            if (event.pointerType === 'touch' && !prefersReducedMotion) {
+                tapSfx.currentTime = 0;
+                tapSfx.play().catch(e => {});
+            }
+
+            if (prefersReducedMotion && event.pointerType !== 'touch') return;
+
+            if (event.type === 'keydown' && (event.key === 'Enter' || event.key === ' ')) {
+                currentTiltX = 0;
+                currentTiltY = 0;
+                currentScale = TILT_SCALE_EFFECT * 0.98;
+                ratImage.style.transform = `rotateX(${currentTiltX}deg) rotateY(${currentTiltY}deg) scale(${currentScale})`;
+            }
+
+            mouseMoveHistory = []; /* Clear for shake detection */
+        }
 
 
         const throttledHandleInteractionMove = throttle(function handleInteractionMove(event) {
@@ -442,7 +509,7 @@
             currentScale = TILT_SCALE_EFFECT;
             ratImage.style.transform = `rotateX(${currentTiltX}deg) rotateY(${currentTiltY}deg) scale(${currentScale})`;
             
-            // Dynamic Thickness Highlight (same as before)
+            // Dynamic Thickness Highlight
             const normXTilt = currentTiltY / TILT_MAX_ROTATION; 
             const normYTilt = currentTiltX / TILT_MAX_ROTATION; 
             let highlightIntensity = 0;
@@ -452,62 +519,168 @@
             const dynamicOpacity = THICKNESS_HIGHLIGHT_BASE_OPACITY + (highlightIntensity * THICKNESS_HIGHLIGHT_RANGE);
             ratImage.style.setProperty('--dynamic-thickness-highlight-opacity', dynamicOpacity.toFixed(2));
 
+            // --- SHINE EFFECT CALCULATION ---
+            // Calculate percentage position of cursor relative to element
+            const percentX = (x / rect.width) * 100;
+            const percentY = (y / rect.height) * 100;
+
+            imageWrapper.style.setProperty('--shine-pos-x', `${100 - percentX}%`);
+            imageWrapper.style.setProperty('--shine-pos-y', `${100 - percentY}%`);
+            imageWrapper.style.setProperty('--shine-opacity', '1');
+
         }, MOUSE_MOVE_THROTTLE_MS);
 
-        function handleInteractionEnd() { /* ... same, calls resetIdleTimer ... */ }
-        handleInteractionEnd = function() { if (!experienceStarted || isBouncing) return; const wasInteracting = imageWrapper.classList.contains('is-interacting'); imageWrapper.classList.remove('is-interacting'); ratImage.style.transition = `transform ${TILT_RETURN_SPEED_MS}ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease-out`; const isTransformed = currentTiltX !== 0 || currentTiltY !== 0 || currentScale !== 1; currentTiltX = 0; currentTiltY = 0; currentScale = 1; ratImage.style.setProperty('--dynamic-thickness-highlight-opacity', '0'); if (prefersReducedMotion) { ratImage.style.transform = `rotateX(${currentTiltX}deg) rotateY(${currentTiltY}deg) scale(${currentScale})`; stopLevitation(); } else { ratImage.style.transform = `rotateX(${currentTiltX}deg) rotateY(${currentTiltY}deg) scale(${currentScale})`; resetIdleTimer(); if(isTransformed && wasInteracting) { returnSfx.volume = 1.0; returnSfx.currentTime = 0; returnSfx.play().catch(e => {}); } } mouseMoveHistory = []; /* Clear for shake detection */ };
+        function handleInteractionEnd(event) {
+            if (!experienceStarted || isBouncing) return;
+
+            // FIX: If we are dragging (capturing), ignore pointerleave so interaction continues outside bounds
+            if (event && event.type === 'pointerleave' && event.pointerId && imageWrapper.hasPointerCapture(event.pointerId)) {
+                return;
+            }
+
+            // Release pointer capture
+            if (event && (event.type === 'pointerup' || event.type === 'pointercancel')) {
+                try {
+                    if(event.pointerId) imageWrapper.releasePointerCapture(event.pointerId);
+                } catch(e) {}
+            }
+
+            const wasInteracting = imageWrapper.classList.contains('is-interacting');
+            imageWrapper.classList.remove('is-interacting');
+            ratImage.style.transition = `transform ${TILT_RETURN_SPEED_MS}ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease-out`;
+
+            const isTransformed = currentTiltX !== 0 || currentTiltY !== 0 || currentScale !== 1;
+            currentTiltX = 0;
+            currentTiltY = 0;
+            currentScale = 1;
+            ratImage.style.setProperty('--dynamic-thickness-highlight-opacity', '0');
+            imageWrapper.style.setProperty('--shine-opacity', '0'); // Hide shine
+
+            if (prefersReducedMotion) {
+                ratImage.style.transform = `rotateX(${currentTiltX}deg) rotateY(${currentTiltY}deg) scale(${currentScale})`;
+                stopLevitation();
+            } else {
+                ratImage.style.transform = `rotateX(${currentTiltX}deg) rotateY(${currentTiltY}deg) scale(${currentScale})`;
+                resetIdleTimer();
+                if(isTransformed && wasInteracting) {
+                    returnSfx.volume = 1.0;
+                    returnSfx.currentTime = 0;
+                    returnSfx.play().catch(e => {});
+                }
+            }
+            mouseMoveHistory = []; /* Clear for shake detection */
+        }
         
-        imageWrapper.addEventListener('click', function(e) { /* ... same ... */ });
         imageWrapper.addEventListener('click', function(e) {
-    if (!experienceStarted || prefersReducedMotion || isBouncing) return;
+            if (!experienceStarted || prefersReducedMotion || isBouncing) return;
 
-    rat_clicks++;
+            rat_clicks++;
 
-    if (rat_clicks % 10 === 0) {
-        displayRatFact();
-    }
+            if (rat_clicks % 10 === 0) {
+                displayRatFact();
+            }
 
-    isBouncing = true;
-    stopLevitation();
-    clearAllIdleTimers();
-    imageWrapper.classList.add('is-interacting');
-    ratImage.classList.add('is-clicked-bounce');
+            isBouncing = true;
+            stopLevitation();
+            clearAllIdleTimers();
+            imageWrapper.classList.add('is-interacting');
+            ratImage.classList.add('is-clicked-bounce');
 
-    if (!prefersReducedMotion) {
-        tapSfx.currentTime = 0;
-        tapSfx.volume = 0.8;
-        tapSfx.play().catch(err => {});
-    }
+            if (!prefersReducedMotion) {
+                tapSfx.currentTime = 0;
+                tapSfx.volume = 0.8;
+                tapSfx.play().catch(err => {});
+            }
 
-    function onBounceEnd() {
-        ratImage.classList.remove('is-clicked-bounce');
-        imageWrapper.classList.remove('is-interacting');
-        ratImage.removeEventListener('animationend', onBounceEnd);
-        isBouncing = false;
-        currentTiltX = 0;
-        currentTiltY = 0;
-        currentScale = 1;
-        ratImage.style.transform = 'rotateX(0deg) rotateY(0deg) scale(1)';
-        ratImage.style.setProperty('--dynamic-thickness-highlight-opacity', '0');
-        resetIdleTimer();
-    }
+            function onBounceEnd() {
+                ratImage.classList.remove('is-clicked-bounce');
+                imageWrapper.classList.remove('is-interacting');
+                ratImage.removeEventListener('animationend', onBounceEnd);
+                isBouncing = false;
+                currentTiltX = 0;
+                currentTiltY = 0;
+                currentScale = 1;
+                ratImage.style.transform = 'rotateX(0deg) rotateY(0deg) scale(1)';
+                ratImage.style.setProperty('--dynamic-thickness-highlight-opacity', '0');
+                imageWrapper.style.setProperty('--shine-opacity', '0');
+                resetIdleTimer();
+            }
 
-    ratImage.addEventListener('animationend', onBounceEnd, { once: true });
-});
+            ratImage.addEventListener('animationend', onBounceEnd, { once: true });
+        });
 
-        // Event Listeners (condensed)
-        window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', (e) => { prefersReducedMotion = e.matches; stopLevitation(); clearAllIdleTimers(); ratImage.style.setProperty('--dynamic-thickness-highlight-opacity', '0'); if (prefersReducedMotion) { handleInteractionEnd(); if (experienceStarted) { imageWrapper.style.animation = 'none'; imageWrapper.style.opacity = '1'; imageWrapper.style.transform = 'scale(1) rotateZ(0deg) translateY(0px)'; } else { introText.style.animation = 'none'; } ratImage.style.animation = 'none'; } else { if (experienceStarted) { imageWrapper.style.animation = ''; resetIdleTimer(); } else { introText.style.animation = ''; } } });
-        if (prefersReducedMotion) { stopLevitation(); clearAllIdleTimers(); ratImage.style.setProperty('--dynamic-thickness-highlight-opacity', '0'); if (experienceStarted) { imageWrapper.style.opacity = '1'; imageWrapper.style.transform = 'scale(1) rotateZ(0deg) translateY(0px)'; ratImage.style.animation = 'none'; } else { introText.style.animation = 'none'; } }
+        // Event Listeners (Refactored and Cleaned)
+        window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', (e) => {
+            prefersReducedMotion = e.matches;
+            stopLevitation();
+            clearAllIdleTimers();
+            ratImage.style.setProperty('--dynamic-thickness-highlight-opacity', '0');
+            imageWrapper.style.setProperty('--shine-opacity', '0');
+            if (prefersReducedMotion) {
+                handleInteractionEnd();
+                if (experienceStarted) {
+                    imageWrapper.style.animation = 'none';
+                    imageWrapper.style.opacity = '1';
+                    imageWrapper.style.transform = 'scale(1) rotateZ(0deg) translateY(0px)';
+                } else {
+                    introText.style.animation = 'none';
+                }
+                ratImage.style.animation = 'none';
+            } else {
+                if (experienceStarted) {
+                    imageWrapper.style.animation = '';
+                    resetIdleTimer();
+                } else {
+                    introText.style.animation = '';
+                }
+            }
+        });
+
+        if (prefersReducedMotion) {
+            stopLevitation();
+            clearAllIdleTimers();
+            ratImage.style.setProperty('--dynamic-thickness-highlight-opacity', '0');
+            imageWrapper.style.setProperty('--shine-opacity', '0');
+            if (experienceStarted) {
+                imageWrapper.style.opacity = '1';
+                imageWrapper.style.transform = 'scale(1) rotateZ(0deg) translateY(0px)';
+                ratImage.style.animation = 'none';
+            } else {
+                introText.style.animation = 'none';
+            }
+        }
+
+        // Consolidated Pointer Events
         imageWrapper.addEventListener('pointerenter', handleInteractionStart);
-        imageWrapper.addEventListener('pointermove', (e) => { if (!experienceStarted || isBouncing) return; stopLevitation(); clearAllIdleTimers(); throttledHandleInteractionMove(e); });
         imageWrapper.addEventListener('pointerleave', handleInteractionEnd);
-        imageWrapper.addEventListener('pointerdown', (e) => { if(isBouncing) { e.preventDefault(); return; } handleInteractionStart(e); if (experienceStarted && !prefersReducedMotion) throttledHandleInteractionMove(e);}, { passive: false });
-        imageWrapper.addEventListener('pointermove', (e) => { if (!experienceStarted || isBouncing) return; stopLevitation(); clearAllIdleTimers(); throttledHandleInteractionMove(e); }, { passive: true });
+
+        // Use pointerdown to start interaction and capture pointer
+        imageWrapper.addEventListener('pointerdown', (e) => {
+             if(isBouncing) { e.preventDefault(); return; }
+             handleInteractionStart(e);
+             if (experienceStarted && !prefersReducedMotion) throttledHandleInteractionMove(e);
+        });
+
+        // Single consolidated pointermove listener
+        imageWrapper.addEventListener('pointermove', (e) => {
+            if (!experienceStarted || isBouncing) return;
+            stopLevitation();
+            clearAllIdleTimers();
+            throttledHandleInteractionMove(e);
+        });
+
         imageWrapper.addEventListener('pointerup', handleInteractionEnd);
         imageWrapper.addEventListener('pointercancel', handleInteractionEnd);
+
         imageWrapper.addEventListener('focus', handleInteractionStart);
         imageWrapper.addEventListener('blur', handleInteractionEnd);
-        imageWrapper.addEventListener('keydown', (e) => { if (!experienceStarted || isBouncing) return; if (e.key === 'Enter' || e.key === ' ') { handleInteractionStart(e); setTimeout(handleInteractionEnd, 300); }});
+        imageWrapper.addEventListener('keydown', (e) => {
+            if (!experienceStarted || isBouncing) return;
+            if (e.key === 'Enter' || e.key === ' ') {
+                handleInteractionStart(e);
+                setTimeout(handleInteractionEnd, 300);
+            }
+        });
     </script>
 </body>
 </html>
