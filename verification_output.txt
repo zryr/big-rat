@@ -1,0 +1,7 @@
+--- Testing 10 Taps ---
+Fact popup visible: false
+Fact text: ""
+FAIL: Fact not visible.
+--- Testing Shake ---
+Is Shaking: false
+FAIL: Shake not triggered.
