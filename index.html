@@ -343,6 +343,12 @@
     }
     introScreen.addEventListener('transitionend', handleIntroFadeOut);
     setTimeout(() => introScreen.classList.add('hidden'), 300);
+    // Fallback in case transitionend doesn't fire (e.g. tab backgrounded)
+    setTimeout(() => {
+        if (introScreen.style.display !== 'none') {
+            handleIntroFadeOut({ target: introScreen, propertyName: 'opacity' });
+        }
+    }, 600);
 
     // Mobile Shake Detection
     if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
@@ -449,8 +455,8 @@
         }
 
         // --- RAT FACTS ---
-        function displayRatFact() {
-             if (prefersReducedMotion || !experienceStarted || document.hidden || imageWrapper.classList.contains('is-interacting') || isBouncing) {
+        function displayRatFact(force = false) {
+             if (prefersReducedMotion || !experienceStarted || document.hidden || (!force && (imageWrapper.classList.contains('is-interacting') || isBouncing))) {
                 scheduleRatFact(); return;
             }
             const fact = RAT_FACTS[Math.floor(Math.random() * RAT_FACTS.length)];
@@ -529,6 +535,9 @@
         const throttledHandleInteractionMove = throttle(function handleInteractionMove(event) {
             if (!experienceStarted || !imageWrapper.classList.contains('is-interacting') || isBouncing || prefersReducedMotion) return;
 
+            // If shaking (scream effect), don't override the shake animation with tilt
+            if (ratContainer.classList.contains('is-shaking')) return;
+
             const rect = imageWrapper.getBoundingClientRect();
             const clientX = event.clientX;
             const clientY = event.clientY;
@@ -571,7 +580,7 @@
             rat_clicks++;
 
             if (rat_clicks % 10 === 0) {
-                displayRatFact();
+                displayRatFact(true);
             }
 
             isBouncing = true;
