@@ -278,6 +278,7 @@
         let lastShakeTimestamp = 0;
         let ratFactTimer = null;
         let squeakTimer = null;
+        let isMouseHovering = false;
 
         const RAT_FACTS = [
             "Rats are surprisingly clean and groom themselves often.",
@@ -597,16 +598,23 @@
 
             function onBounceEnd() {
                 ratContainer.classList.remove('is-clicked-bounce');
-                imageWrapper.classList.remove('is-interacting');
                 ratContainer.removeEventListener('animationend', onBounceEnd);
                 isBouncing = false;
-                currentTiltX = 0;
-                currentTiltY = 0;
-                currentScale = 1;
-                ratContainer.style.transform = 'rotateX(0deg) rotateY(0deg) scale(1)';
-                ratContainer.style.setProperty('--dynamic-thickness-highlight-opacity', '0');
-                ratContainer.style.setProperty('--shine-opacity', '0');
-                resetIdleTimer();
+
+                if (isMouseHovering) {
+                    // Continue hover effect on PC
+                    currentScale = TILT_SCALE_EFFECT;
+                    ratContainer.style.transform = `rotateX(${currentTiltX}deg) rotateY(${currentTiltY}deg) scale(${currentScale})`;
+                } else {
+                    imageWrapper.classList.remove('is-interacting');
+                    currentTiltX = 0;
+                    currentTiltY = 0;
+                    currentScale = 1;
+                    ratContainer.style.transform = 'rotateX(0deg) rotateY(0deg) scale(1)';
+                    ratContainer.style.setProperty('--dynamic-thickness-highlight-opacity', '0');
+                    ratContainer.style.setProperty('--shine-opacity', '0');
+                    resetIdleTimer();
+                }
             }
 
             ratContainer.addEventListener('animationend', onBounceEnd, { once: true });
@@ -636,6 +644,11 @@
                     triggerTapBounce();
                     return; // Stop here, bounce handles the reset
                 }
+            }
+
+            // If it's a pointer up/cancel from a mouse, and we are still hovering, don't end interaction
+            if (event && (event.type === 'pointerup' || event.type === 'pointercancel') && event.pointerType === 'mouse' && isMouseHovering) {
+                return;
             }
 
             const wasInteracting = imageWrapper.classList.contains('is-interacting');
@@ -706,8 +719,18 @@
         }
 
         // Consolidated Pointer Events
-        imageWrapper.addEventListener('pointerenter', handleInteractionStart);
-        imageWrapper.addEventListener('pointerleave', handleInteractionEnd);
+        imageWrapper.addEventListener('pointerenter', (e) => {
+            if (e.pointerType === 'mouse') {
+                isMouseHovering = true;
+            }
+            handleInteractionStart(e);
+        });
+        imageWrapper.addEventListener('pointerleave', (e) => {
+            if (e.pointerType === 'mouse') {
+                isMouseHovering = false;
+            }
+            handleInteractionEnd(e);
+        });
 
         // Use pointerdown to start interaction and capture pointer
         imageWrapper.addEventListener('pointerdown', (e) => {
